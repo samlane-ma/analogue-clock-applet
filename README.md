@@ -4,8 +4,6 @@
 
 ## Add an analogue clock to the Budgie Panel
 
-## Still a bit of a work in progress:
-
 ### This is a Vala based rewrite of python Budgie Analog Clock.
 ### It is for the most part identical in form and function to the python version.
 
