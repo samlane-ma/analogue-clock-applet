@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema path="/com/github/samlane-ma/analogue-clock/" 
+              id="com.github.samlane-ma.analogue-clock">
+        <key name="clock-size" type="i">
+            <range min="22" max="200"/>
+            <summary>Clock Size</summary>
+            <description>
+                Current size of the clock in pixels
+            </description>
+            <default>24</default>
+        </key>
+        <key name="clock-outline" type="s">
+            <summary>Set the color of the clock outline</summary>
+            <description>Hex color of the clock outline</description>
+            <default>"#000000"</default>
+        </key>
+        <key name="clock-face" type="s">
+            <summary>Set the color of the clock face</summary>
+            <description>Hex color of the clock face</description>
+            <default>"#FFFFFF"</default>
+        </key>
+        <key name="clock-hands" type="s">
+            <summary>Set the color of the clock hour hand</summary>
+            <description>Hex color of the clock hour hand</description>
+            <default>"#000000"</default>
+        </key>
+        <key name="draw-marks" type="b">
+            <summary>Draw hour markings</summary>
+            <description>Draw the hour markings around the face of the clock</description>
+            <default>true</default>
+        </key>
+    </schema> 
+</schemalist>

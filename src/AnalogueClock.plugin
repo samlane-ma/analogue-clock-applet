@@ -1,0 +1,8 @@
+[Plugin]
+Module=analogue-clock-applet.so
+Name=Analogue Clock
+Description=Analogue Clock
+Authors=Sam Lane
+Copyright=2020 Sam Lane
+Website=https://github.com/samlane-ma/
+Icon=panel-analogue-clock
