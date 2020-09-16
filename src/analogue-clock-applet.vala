@@ -129,7 +129,7 @@ namespace AnalogueClock {
         private GLib.Settings? currpanelsubject_settings;
         private GLib.Settings app_settings;
         private ulong panel_signal;
-        private ulong settings_signal;
+        private ulong? settings_signal;
         private string soluspath;
         private bool keep_running;
 
@@ -158,6 +158,8 @@ namespace AnalogueClock {
             max_size = MIN_SIZE;
             old_minute = -1;
             keep_running = true;
+             
+            //settings_signal = 0;
 
             panel_icon = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 1);
             add(panel_icon);
@@ -167,7 +169,7 @@ namespace AnalogueClock {
 
             app_settings = new GLib.Settings ("com.github.samlane-ma.analogue-clock");
             load_settings();
-            settings_signal = app_settings.changed.connect(update_clock);
+            settings_signal = app_settings.changed.connect(redraw_clock);
             Idle.add(() => { watch_applet(uuid); 
                              return false;});
             Timeout.add_seconds_full(GLib.Priority.LOW,5,update_time);
@@ -180,9 +182,12 @@ namespace AnalogueClock {
                 clock_scale = max_size;
             }
             // Don't recursively trigger this if validate_settings fixes things
-            SignalHandler.block((void*)app_settings,settings_signal);
-            validate_settings();
-            SignalHandler.unblock((void*)app_settings,settings_signal);
+            // This runs once on startup before signals are connected- skip if null
+            if (settings_signal != null) {
+                SignalHandler.block((void*)app_settings,settings_signal);
+                validate_settings();
+                SignalHandler.unblock((void*)app_settings,settings_signal);
+            }
             hands_color = app_settings.get_string("clock-hands");
             line_color = app_settings.get_string("clock-outline");
             fill_color = app_settings.get_string("clock-face");
@@ -191,7 +196,7 @@ namespace AnalogueClock {
 
         private void validate_settings() {
             // Verify the color names are valid, reload defaults if not.
-            // Shoudl only happen if invalid dconf settings are manually entered
+            // Should only happen if invalid dconf settings are manually entered
             string[] setting_name = {"clock-hands", "clock-outline", "clock-face"};
             string[] default_color = {"#000000", "#000000", "#FFFFFF"};
             for (int i = 0; i < 3; i++) {
@@ -203,13 +208,13 @@ namespace AnalogueClock {
             }
         }
 
-        private void update_clock(){
+        private void redraw_clock(){
             // force the redraw & make sure no bad settings were given
             old_minute = -1;
             load_settings();
             update_time();
         }
-        
+
         private bool update_time() {
             // Check the time, draw a new clock if necessary
             var current_time = new DateTime.now_local();
@@ -322,7 +327,7 @@ namespace AnalogueClock {
             if (current_size > max_size) {
                 clock_scale = max_size;
             }
-            update_clock();
+            redraw_clock();
         }
 
         public override void panel_position_changed(Budgie.PanelPosition position) {
@@ -334,7 +339,7 @@ namespace AnalogueClock {
             else {
                 panel_icon.set_orientation(Gtk.Orientation.HORIZONTAL);
             }
-            update_clock();
+            redraw_clock();
         }
 
         public override bool supports_settings() {
