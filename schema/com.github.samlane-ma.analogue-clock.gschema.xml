@@ -8,7 +8,7 @@
             <description>
                 Current size of the clock in pixels
             </description>
-            <default>24</default>
+            <default>28</default>
         </key>
         <key name="clock-outline" type="s">
             <summary>Set the color of the clock outline</summary>
@@ -28,7 +28,7 @@
         <key name="draw-marks" type="b">
             <summary>Draw hour markings</summary>
             <description>Draw the hour markings around the face of the clock</description>
-            <default>true</default>
+            <default>false</default>
         </key>
     </schema> 
 </schemalist>
