@@ -167,10 +167,10 @@ namespace AnalogueClock {
 
             app_settings = new GLib.Settings ("com.github.samlane-ma.analogue-clock");
             load_settings();
-            settings_signal = app_settings.changed.connect(() => {load_settings();
-                                                                  update_clock();} );
-            Idle.add(() => {watch_applet(uuid); return false;});
-            Timeout.add_seconds(5,update_time);
+            settings_signal = app_settings.changed.connect(update_clock);
+            Idle.add(() => { watch_applet(uuid); 
+                             return false;});
+            Timeout.add_seconds_full(GLib.Priority.LOW,5,update_time);
         }
 
         private void load_settings(){
@@ -179,6 +179,10 @@ namespace AnalogueClock {
             if (clock_scale > max_size) {
                 clock_scale = max_size;
             }
+            // Don't recursively trigger this if validate_settings fixes things
+            SignalHandler.block((void*)app_settings,settings_signal);
+            validate_settings();
+            SignalHandler.unblock((void*)app_settings,settings_signal);
             hands_color = app_settings.get_string("clock-hands");
             line_color = app_settings.get_string("clock-outline");
             fill_color = app_settings.get_string("clock-face");
@@ -203,7 +207,6 @@ namespace AnalogueClock {
             // force the redraw & make sure no bad settings were given
             old_minute = -1;
             load_settings();
-            validate_settings();
             update_time();
         }
         
