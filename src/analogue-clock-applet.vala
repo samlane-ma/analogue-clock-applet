@@ -33,9 +33,9 @@ namespace AnalogueClock {
     const int MINHAND_LEN  =  76;
     const int HOURHAND_LEN =  56;
     const int MARK_LEN     =  10;
-    const int LINE_WIDTH   =  10; 
+    const int LINE_WIDTH   =   8; 
 
-    public class Plugin : Budgie.Plugin, Peas.ExtensionBase{
+    public class Plugin : Budgie.Plugin, Peas.ExtensionBase {
 
         public Budgie.Applet get_panel_widget(string uuid){
             return new AnalogueClockApplet(uuid);
@@ -114,12 +114,7 @@ namespace AnalogueClock {
 
         private void on_color_changed(Gtk.ColorButton button, string part) {
             Gdk.RGBA c = button.get_rgba();
-            string hex_code =
-            "#%02x%02x%02x"
-            .printf((uint)(Math.round(c.red*255)),
-                    (uint)(Math.round(c.green*255)),
-                    (uint)(Math.round(c.blue*255))).up();
-            app_settings.set_string(part, hex_code);
+            app_settings.set_string(part, c.to_string());
         }
     }
 
@@ -132,8 +127,9 @@ namespace AnalogueClock {
         private ulong? settings_signal;
         private string soluspath;
         private bool keep_running;
+        private bool update_needed;
 
-        private Gtk.Box panel_icon;
+        private Gtk.Box panel_box;
         private Gtk.Image clock_image;
         private Gdk.Pixbuf pixbuf;
         private string filename;
@@ -156,23 +152,21 @@ namespace AnalogueClock {
             filename = "/tmp/".concat(username, "_panel_analogue_clock.svg");
 
             max_size = MIN_SIZE;
-            old_minute = -1;
+            update_needed = true;
             keep_running = true;
-             
-            //settings_signal = 0;
 
-            panel_icon = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 1);
-            add(panel_icon);
+            panel_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 1);
+            add(panel_box);
             clock_image = new Gtk.Image();
-            panel_icon.pack_start(clock_image, false, false, 0);
+            panel_box.pack_start(clock_image, false, false, 0);
             show_all();
 
             app_settings = new GLib.Settings ("com.github.samlane-ma.analogue-clock");
             load_settings();
-            settings_signal = app_settings.changed.connect(redraw_clock);
+            settings_signal = app_settings.changed.connect(force_clock_redraw);
             Idle.add(() => { watch_applet(uuid); 
                              return false;});
-            Timeout.add_seconds_full(GLib.Priority.LOW,5,update_time);
+            Timeout.add_seconds_full(GLib.Priority.LOW,5,update_clock_time);
         }
 
         private void load_settings(){
@@ -208,30 +202,31 @@ namespace AnalogueClock {
             }
         }
 
-        private void redraw_clock(){
-            // force the redraw & make sure no bad settings were given
-            old_minute = -1;
+        private void force_clock_redraw() {
+            // force the redraw after settings / panel change
+            update_needed = true;
             load_settings();
-            update_time();
+            update_clock_time();
         }
 
-        private bool update_time() {
+        private bool update_clock_time() {
             // Check the time, draw a new clock if necessary
             var current_time = new DateTime.now_local();
             int curr_hour = current_time.get_hour();
             int curr_min = current_time.get_minute();
-            if (curr_min != old_minute){
+            if (curr_min != old_minute || update_needed) {
                 old_minute = curr_min;
+                update_needed = false;
                 create_clock_image(curr_hour,curr_min);
-                Idle.add(() => { load_new_image();
-                                 return false;
-                });
+                Idle.add(() => { update_panel_clock(current_time.format("%x"));
+                                return false; });
             }
             return keep_running;
         }
-        
-        private void load_new_image () {
+
+        private void update_panel_clock(string tooltip_date) {
            // Load the generated svg into the panel icon
+            panel_box.set_tooltip_text(tooltip_date);
             try {
                 pixbuf = new Gdk.Pixbuf.from_file_at_scale(filename,clock_scale,
                                                            clock_scale, true);
@@ -242,7 +237,7 @@ namespace AnalogueClock {
             }
         }
 
-        private void create_clock_image (int hours, int mins){
+        private void create_clock_image(int hours, int mins) {
             // Write the clock image svg to a temporary file
             if (hours > 12) {
                 hours -= 12;
@@ -254,10 +249,15 @@ namespace AnalogueClock {
             clock_svg.add_circle(IMAGE_SIZE / 2, IMAGE_SIZE / 2, LINE_WIDTH,
                                  hands_color, hands_color, 1);
             if (draw_hour_marks) {
+                int offset = LINE_WIDTH / 2;
                 for (int i = 0; i < 12; i++) {
-                    clock_svg.add_line(get_coord("x", i * 5, RADIUS), get_coord("y",i * 5, RADIUS),
-                                       get_coord("x", i * 5, RADIUS - MARK_LEN),
-                                       get_coord("y", i * 5, RADIUS -MARK_LEN), line_color, 6);
+                    int mark_size = (i % 3 == 0 ? MARK_LEN : MARK_LEN / 2);
+                    int mark_width = (i % 3 == 0 ? LINE_WIDTH * 3/4: LINE_WIDTH / 2);
+                    clock_svg.add_line(get_coord("x", i * 5, RADIUS - offset), 
+                                       get_coord("y", i * 5, RADIUS - offset),
+                                       get_coord("x", i * 5, RADIUS - offset - mark_size),
+                                       get_coord("y", i * 5, RADIUS - offset -mark_size),
+                                       line_color, mark_width);
                 }
             }
             clock_svg.add_line(IMAGE_SIZE / 2, IMAGE_SIZE / 2, get_coord("x",hours,HOURHAND_LEN),
@@ -267,8 +267,9 @@ namespace AnalogueClock {
             clock_svg.write_svg();
         }
 
-        private int get_coord (string c_type, int hand_position, int length) {
+        private int get_coord(string c_type, int hand_position, int length) {
             // Returns the circle coordinates for the given minute/hour 
+            // c_type can be either "x" or "y"
             hand_position -= 15;
             if (hand_position < 0) {
                 hand_position += 60;
@@ -283,7 +284,7 @@ namespace AnalogueClock {
             return 0;
         }
 
-        private bool find_applet (string find_uuid, string[] applet_list) {
+        private bool find_applet(string find_uuid, string[] applet_list) {
             // Search panel applets for the given uuid
             for (int i = 0; i < applet_list.length; i++) {
                 if (applet_list[i] == find_uuid) {
@@ -293,7 +294,7 @@ namespace AnalogueClock {
             return false;
         }
 
-        private void watch_applet (string find_uuid) {
+        private void watch_applet(string find_uuid) {
             // Check if the applet is still on the panel and end cleanly if not
             string[] applets;
             panel_settings = new GLib.Settings(soluspath);
@@ -317,7 +318,7 @@ namespace AnalogueClock {
             }
         }
 
-        public override void panel_size_changed(int p, int i, int s){
+        public override void panel_size_changed(int p, int i, int s) {
             // Scale the icon if necessary when panel is resized
             max_size = p - 6;
             if (max_size < MIN_SIZE){
@@ -327,19 +328,19 @@ namespace AnalogueClock {
             if (current_size > max_size) {
                 clock_scale = max_size;
             }
-            redraw_clock();
+            force_clock_redraw();
         }
 
         public override void panel_position_changed(Budgie.PanelPosition position) {
             // Keep the icon centered in both horizontal and vertical panels
             if ( position == Budgie.PanelPosition.LEFT ||
                  position == Budgie.PanelPosition.RIGHT ) {
-                panel_icon.set_orientation(Gtk.Orientation.VERTICAL);
+                panel_box.set_orientation(Gtk.Orientation.VERTICAL);
             }
             else {
-                panel_icon.set_orientation(Gtk.Orientation.HORIZONTAL);
+                panel_box.set_orientation(Gtk.Orientation.HORIZONTAL);
             }
-            redraw_clock();
+            force_clock_redraw();
         }
 
         public override bool supports_settings() {
@@ -353,7 +354,7 @@ namespace AnalogueClock {
 }
 
 [ModuleInit]
-public void peas_register_types(TypeModule module){
+public void peas_register_types(TypeModule module) {
 
     // boilerplate - all modules need this
     var objmodule = module as Peas.ObjectModule;
