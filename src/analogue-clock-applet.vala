@@ -19,21 +19,17 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  Icon made by Becris from www.flaticon.com
  */
 
-using Gtk, Gdk;
-using CreateSVG;
-using Math;
+using Gtk, Gdk, Cairo;
+using ClockImage;
 
 namespace AnalogueClock {
 
-    const int IMAGE_SIZE   = 200;
-    const int MIN_SIZE     =  22;
-    const int RADIUS       =  92;
-    const int MINHAND_LEN  =  76;
-    const int HOURHAND_LEN =  56;
-    const int MARK_LEN     =  10;
-    const int LINE_WIDTH   =   8; 
+    const int MAX_SIZE = 200;
+    const int MIN_SIZE =  22;
 
     public class Plugin : Budgie.Plugin, Peas.ExtensionBase {
 
@@ -43,7 +39,7 @@ namespace AnalogueClock {
     }
 
     public class AnalogueClockSettings : Gtk.Grid {
-    
+
         private GLib.Settings app_settings;
 
         public AnalogueClockSettings(GLib.Settings? settings) {
@@ -64,7 +60,7 @@ namespace AnalogueClock {
             }
 
             Gtk.Adjustment adj = new Gtk.Adjustment(app_settings.get_int("clock-size"),
-                                                    MIN_SIZE,IMAGE_SIZE,1,1,0);
+                                                    MIN_SIZE,MAX_SIZE,1,1,0);
             Gtk.SpinButton spin_clock_size = new Gtk.SpinButton(adj,1.0,0);
             spin_clock_size.set_digits(0);
             this.attach(spin_clock_size, 1, 1, 1, 1);
@@ -125,15 +121,12 @@ namespace AnalogueClock {
         private GLib.Settings app_settings;
         private ulong panel_signal;
         private ulong? settings_signal;
-        private string soluspath;
+
         private bool keep_running;
         private bool update_needed;
 
         private Gtk.Box panel_box;
         private Gtk.Image clock_image;
-        private Gdk.Pixbuf pixbuf;
-        private string filename;
-        private Svgfile clock_svg;
         private bool draw_hour_marks;
         private int max_size;
         private int clock_scale;
@@ -145,11 +138,6 @@ namespace AnalogueClock {
         public string uuid { public set; public get; }
 
         public AnalogueClockApplet(string uuid) {
-
-            soluspath = "com.solus-project.budgie-panel";
-
-            string username = Environment.get_user_name();
-            filename = "/tmp/".concat(username, "_panel_analogue_clock.svg");
 
             max_size = MIN_SIZE;
             update_needed = true;
@@ -217,71 +205,19 @@ namespace AnalogueClock {
             if (curr_min != old_minute || update_needed) {
                 old_minute = curr_min;
                 update_needed = false;
-                create_clock_image(curr_hour,curr_min);
-                Idle.add(() => { update_panel_clock(current_time.format("%x"));
+                Cairo.ImageSurface surface = get_clock_surface(curr_hour,curr_min,
+                                             clock_scale, line_color, fill_color,
+                                             hands_color, draw_hour_marks);
+                Idle.add(() => { update_panel_clock(surface, current_time.format("%x"));
                                 return false; });
             }
             return keep_running;
         }
 
-        private void update_panel_clock(string tooltip_date) {
+        private void update_panel_clock(Cairo.ImageSurface surface, string tooltip_date) {
            // Load the generated svg into the panel icon
             panel_box.set_tooltip_text(tooltip_date);
-            try {
-                pixbuf = new Gdk.Pixbuf.from_file_at_scale(filename,clock_scale,
-                                                           clock_scale, true);
-                clock_image.set_from_pixbuf(pixbuf);
-            }
-            catch (Error e) {
-                stdout.printf("unable to load image\n");
-            }
-        }
-
-        private void create_clock_image(int hours, int mins) {
-            // Write the clock image svg to a temporary file
-            if (hours > 12) {
-                hours -= 12;
-            }
-            hours = hours * 5 + (mins / 12);
-            clock_svg = new Svgfile(filename, IMAGE_SIZE, IMAGE_SIZE);
-            clock_svg.add_circle(IMAGE_SIZE / 2, IMAGE_SIZE / 2, RADIUS,
-                                 fill_color, line_color, LINE_WIDTH);
-            clock_svg.add_circle(IMAGE_SIZE / 2, IMAGE_SIZE / 2, LINE_WIDTH,
-                                 hands_color, hands_color, 1);
-            if (draw_hour_marks) {
-                int offset = LINE_WIDTH / 2;
-                for (int i = 0; i < 12; i++) {
-                    int mark_size = (i % 3 == 0 ? MARK_LEN : MARK_LEN / 2);
-                    int mark_width = (i % 3 == 0 ? LINE_WIDTH * 3/4: LINE_WIDTH / 2);
-                    clock_svg.add_line(get_coord("x", i * 5, RADIUS - offset), 
-                                       get_coord("y", i * 5, RADIUS - offset),
-                                       get_coord("x", i * 5, RADIUS - offset - mark_size),
-                                       get_coord("y", i * 5, RADIUS - offset -mark_size),
-                                       line_color, mark_width);
-                }
-            }
-            clock_svg.add_line(IMAGE_SIZE / 2, IMAGE_SIZE / 2, get_coord("x",hours,HOURHAND_LEN),
-                               get_coord("y",hours,HOURHAND_LEN), hands_color, LINE_WIDTH);
-            clock_svg.add_line(IMAGE_SIZE / 2, IMAGE_SIZE / 2, get_coord("x",mins,MINHAND_LEN),
-                               get_coord("y",mins,MINHAND_LEN), hands_color, LINE_WIDTH);
-            clock_svg.write_svg();
-        }
-
-        private int get_coord(string c_type, int hand_position, int length) {
-            // Returns the circle coordinates for the given minute/hour 
-            // c_type can be either "x" or "y"
-            hand_position -= 15;
-            if (hand_position < 0) {
-                hand_position += 60;
-            }
-            double radians = (hand_position * (Math.PI * 2) / 60);
-            if (c_type == "x") {
-                return (int)Math.round(IMAGE_SIZE / 2 + length * cos(radians));
-            }
-            else if (c_type == "y") {
-                return (int)Math.round(IMAGE_SIZE / 2 + length * sin(radians));
-            }
-            return 0;
+            clock_image.set_from_surface(surface);
         }
 
         private bool find_applet(string find_uuid, string[] applet_list) {
@@ -295,8 +231,9 @@ namespace AnalogueClock {
         }
 
         private void watch_applet(string find_uuid) {
-            // Check if the applet is still on the panel and end cleanly if not
+            // Check if the applet is still on the panel and ends cleanly if not
             string[] applets;
+            string soluspath = "com.solus-project.budgie-panel";
             panel_settings = new GLib.Settings(soluspath);
             string[] allpanels_list = panel_settings.get_strv("panels");
             foreach (string p in allpanels_list) {

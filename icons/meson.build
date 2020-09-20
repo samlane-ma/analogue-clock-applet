@@ -1,5 +1,5 @@
 
 install_data(
-    'panel-analogue-clock.svg',
+    'panel-analogue-symbolic.svg',
     install_dir: PIXMAPS_DIR
 )
