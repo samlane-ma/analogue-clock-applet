@@ -1,6 +1,8 @@
 /*
- * Used to scale the measurements for the clock image based on pixel size
- * 
+ *  ClockImage
+ *
+ *  Creates and Returns a Cairo Surface With a Clock Image
+ *
  *  Copyright © 2020 Samuel Lane
  *  http://github.com/samlane-ma/
  *
