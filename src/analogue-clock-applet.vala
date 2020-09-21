@@ -24,7 +24,7 @@
  */
 
 using Gtk, Gdk, Cairo;
-using ClockImage;
+using PanelClockFunctions;
 
 namespace AnalogueClock {
 
@@ -129,7 +129,7 @@ namespace AnalogueClock {
         private Gtk.Image clock_image;
         private int max_size;
         private int old_minute;
-        private ClockDrawInfo clock;
+        private PanelClock clock;
 
         public string uuid { public set; public get; }
 
@@ -138,7 +138,7 @@ namespace AnalogueClock {
             max_size = MIN_SIZE;
             update_needed = true;
             keep_running = true;
-            clock = new ClockDrawInfo();
+            clock = new PanelClock();
 
             panel_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 1);
             add(panel_box);
@@ -204,7 +204,7 @@ namespace AnalogueClock {
                 clock.hour = curr_hour;
                 clock.minute = curr_min;
                 update_needed = false;
-                Cairo.ImageSurface surface = get_clock_surface(clock);
+                Cairo.ImageSurface surface = clock.get_clock_surface();
                 Idle.add(() => { update_panel_clock(surface, current_time.format("%x"));
                                 return false; });
             }
