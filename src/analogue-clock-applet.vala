@@ -4,7 +4,7 @@
  *  Copyright © 2020 Samuel Lane
  *  http://github.com/samlane-ma/
  *
- *  Thanks to the Ubuntu Budgie Developers for both their assistance,
+ *  Thanks to the Ubuntu Budgie Developers for their assistance,
  *  examples, and pieces of code I borrowed to make this work.
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -127,13 +127,9 @@ namespace AnalogueClock {
 
         private Gtk.Box panel_box;
         private Gtk.Image clock_image;
-        private bool draw_hour_marks;
         private int max_size;
-        private int clock_scale;
-        private string hands_color;
-        private string line_color;
-        private string fill_color;
         private int old_minute;
+        private ClockDrawInfo clock;
 
         public string uuid { public set; public get; }
 
@@ -142,6 +138,7 @@ namespace AnalogueClock {
             max_size = MIN_SIZE;
             update_needed = true;
             keep_running = true;
+            clock = new ClockDrawInfo();
 
             panel_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 1);
             add(panel_box);
@@ -159,9 +156,9 @@ namespace AnalogueClock {
 
         private void load_settings(){
             // Load the settings
-            clock_scale = app_settings.get_int("clock-size");
-            if (clock_scale > max_size) {
-                clock_scale = max_size;
+            clock.size = app_settings.get_int("clock-size");
+            if (clock.size > max_size) {
+                clock.size = max_size;
             }
             // Don't recursively trigger this if validate_settings fixes things
             // This runs once on startup before signals are connected- skip if null
@@ -170,10 +167,10 @@ namespace AnalogueClock {
                 validate_settings();
                 SignalHandler.unblock((void*)app_settings,settings_signal);
             }
-            hands_color = app_settings.get_string("clock-hands");
-            line_color = app_settings.get_string("clock-outline");
-            fill_color = app_settings.get_string("clock-face");
-            draw_hour_marks = app_settings.get_boolean("draw-marks");
+            clock.hands_color = app_settings.get_string("clock-hands");
+            clock.line_color = app_settings.get_string("clock-outline");
+            clock.fill_color = app_settings.get_string("clock-face");
+            clock.draw_marks = app_settings.get_boolean("draw-marks");
         }
 
         private void validate_settings() {
@@ -201,13 +198,13 @@ namespace AnalogueClock {
             // Check the time, draw a new clock if necessary
             var current_time = new DateTime.now_local();
             int curr_hour = current_time.get_hour();
-            int curr_min = current_time.get_minute();
+            int curr_min  = current_time.get_minute();
             if (curr_min != old_minute || update_needed) {
                 old_minute = curr_min;
+                clock.hour = curr_hour;
+                clock.minute = curr_min;
                 update_needed = false;
-                Cairo.ImageSurface surface = get_clock_surface(curr_hour,curr_min,
-                                             clock_scale, line_color, fill_color,
-                                             hands_color, draw_hour_marks);
+                Cairo.ImageSurface surface = get_clock_surface(clock);
                 Idle.add(() => { update_panel_clock(surface, current_time.format("%x"));
                                 return false; });
             }
@@ -263,7 +260,7 @@ namespace AnalogueClock {
             }
             int current_size = app_settings.get_int("clock-size");
             if (current_size > max_size) {
-                clock_scale = max_size;
+                clock.size = max_size;
             }
             force_clock_redraw();
         }

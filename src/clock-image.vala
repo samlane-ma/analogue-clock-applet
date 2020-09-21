@@ -23,17 +23,28 @@
 using Math, Cairo;
 
 namespace ClockImage {
+
+    private const double FULL_CIRCLE = 2 * Math.PI;
+
+    // Contains the data to create the Cairo surface
+    // Avoids the need to pass tons of arguments
+    public struct ClockDrawInfo {
+        int hour;
+        int minute;
+        int size;
+        string line_color;
+        string hands_color;
+        string fill_color;
+        bool draw_marks;
+    }
+
+    class ClockScalingInfo : Object {
     /* This will create a new object which scales the values used to draw the
      * clock. The size passed (in pixels) will cause data to be adusted so that
      * proportionate values are returned, while keeping some from scaling too
      * low and becoming hard to see at smaller sizes. Lenthy, but keeps the
      * Cairo drawing arguments more obvious.
-     */
-
-    private const double FULL_CIRCLE = 2 * Math.PI;
-
-    class ClockScalingInfo : Object {
-
+     */ 
         private const int IMAGE_SIZE   = 200;
         private const int RADIUS       =  92;
         private const int MINHAND_LEN  =  76;
@@ -47,7 +58,6 @@ namespace ClockImage {
             scale = init_size / IMAGE_SIZE;
             size = init_size;
         }
-
         public double radius { get {return RADIUS * scale;} }
         public double minhand_len { get {return MINHAND_LEN * scale;} }
         public double hourhand_len { get {return HOURHAND_LEN * scale;} }
@@ -88,12 +98,12 @@ namespace ClockImage {
         }
     }
 
-
-    public Cairo.ImageSurface get_clock_surface(int hours, int mins, int clock_size,
-                                                string line_color, string fill_color,
-                                                string hands_color, bool draw_hour_marks) {
+    public Cairo.ImageSurface get_clock_surface(ClockDrawInfo clock) {
         // Returns a Cairo surface containing the clock image, which will get
         // added into a Gtk.Image
+
+        int hours = clock.hour;
+        int mins = clock.minute;
 
         if (hours > 12) {
             hours -= 12;
@@ -101,51 +111,51 @@ namespace ClockImage {
         hours = hours * 5 + (mins / 12);
         // Clock looks better when drawn at even values for size / center
         // so lets turn odd values into even ones
-        clock_size = (clock_size % 2 == 0? clock_size : clock_size -1);
+        int draw_size = (clock.size % 2 == 0? clock.size : clock.size -1);
 
-        ClockScalingInfo scaled = new ClockScalingInfo(clock_size);
-        Cairo.ImageSurface surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, clock_size, clock_size);
+        ClockScalingInfo scaled = new ClockScalingInfo(draw_size);
+        Cairo.ImageSurface surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, draw_size, draw_size);
         Cairo.Context cr = new Cairo.Context(surface);
         Gdk.RGBA color = new Gdk.RGBA();
 
         // Clock face
-        color.parse(fill_color);
+        color.parse(clock.fill_color);
         cr.set_source_rgba(color.red, color.green, color.blue, color.alpha);
         cr.arc(scaled.center, scaled.center, scaled.radius, 0, FULL_CIRCLE);
         cr.fill();
 
         // draw clock outline
-        color.parse(line_color);
+        color.parse(clock.line_color);
         cr.set_source_rgba(color.red, color.green, color.blue, color.alpha);
         cr.set_line_width(scaled.line_width);
         cr.arc(scaled.center, scaled.center, scaled.radius, 0, FULL_CIRCLE);
         cr.stroke();
 
         // draw clock hour markings
-        if (draw_hour_marks) {
+        if (clock.draw_marks) {
             cr.set_line_width(scaled.mark_width);
             for (int i = 0; i < 12; i++) {
                 // draw 15 min marks larger than 5 min marks unless clock is small
-                scaled.offset = ((i % 3 == 0 || clock_size < 30) ? 5 : 0);
-                cr.move_to(get_coord("x", i * 5, scaled.radius, clock_size),
-                           get_coord("y", i * 5, scaled.radius, clock_size));
-                cr.line_to(get_coord("x", i * 5, scaled.mark_len, clock_size),
-                           get_coord("y", i * 5, scaled.mark_len, clock_size));
+                scaled.offset = ((i % 3 == 0 || draw_size < 30) ? 5 : 0);
+                cr.move_to(get_coord("x", i * 5, scaled.radius, draw_size),
+                           get_coord("y", i * 5, scaled.radius, draw_size));
+                cr.line_to(get_coord("x", i * 5, scaled.mark_len, draw_size),
+                           get_coord("y", i * 5, scaled.mark_len, draw_size));
                 cr.stroke();               
             }
         }
 
         // draw clock hands
-        color.parse(hands_color);
+        color.parse(clock.hands_color);
         cr.set_source_rgba(color.red, color.green, color.blue, color.alpha);
         cr.set_line_width(scaled.hand_width);
         cr.move_to(scaled.center, scaled.center);
-        cr.line_to(get_coord("x",hours, scaled.hourhand_len, clock_size),
-                   get_coord("y",hours, scaled.hourhand_len, clock_size));
+        cr.line_to(get_coord("x",hours, scaled.hourhand_len, draw_size),
+                   get_coord("y",hours, scaled.hourhand_len, draw_size));
         cr.stroke();
         cr.move_to(scaled.center,  scaled.center);
-        cr.line_to(get_coord("x",mins, scaled.minhand_len, clock_size),
-                   get_coord("y",mins, scaled.minhand_len, clock_size));
+        cr.line_to(get_coord("x",mins, scaled.minhand_len, draw_size),
+                   get_coord("y",mins, scaled.minhand_len, draw_size));
         cr.stroke();
 
         // draw a little dot in the center
