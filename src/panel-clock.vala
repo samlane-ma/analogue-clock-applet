@@ -95,6 +95,9 @@ namespace PanelClockFunctions {
         public string hands_color {get; set;}
         public string fill_color {get; set;}
         public bool draw_marks {get; set;}
+//      FOR POSSIBLE FUTURE USE TO USE AN EXTERNAL IMAGE FOR THE CLOCK BACKGROUND
+//      public bool use_image {get; set; default = false;}
+//      public string? image_file {get; set;}
 
         public Cairo.ImageSurface get_clock_surface() {
             // Returns a Cairo surface containing the clock image, which will get
@@ -117,6 +120,11 @@ namespace PanelClockFunctions {
             cr.set_source_rgba(color.red, color.green, color.blue, color.alpha);
             cr.arc(scaled.center, scaled.center, scaled.radius, 0, FULL_CIRCLE);
             cr.fill();
+
+//          FOR POSSIBLE FUTURE USE TO USE AN EXTERNAL IMAGE FOR THE CLOCK BACKGROUND
+//          Gdk.Pixbuf image = new Gdk.Pixbuf.from_file_at_scale(image_file,size,size,true);
+//          Gdk.cairo_set_source_pixbuf(cr, image, 0, 0);
+//          cr.paint();
 
             // draw clock outline
             color.parse(line_color);
