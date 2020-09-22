@@ -147,8 +147,8 @@ namespace AnalogueClock {
             show_all();
 
             app_settings = new GLib.Settings ("com.github.samlane-ma.analogue-clock");
-            load_settings();
             settings_signal = app_settings.changed.connect(force_clock_redraw);
+            load_settings();
             Idle.add(() => { watch_applet(uuid); 
                              return false;});
             Timeout.add_seconds_full(GLib.Priority.LOW,5,update_clock_time);
@@ -161,7 +161,6 @@ namespace AnalogueClock {
                 clock.size = max_size;
             }
             // Don't recursively trigger this if validate_settings fixes things
-            // This runs once on startup before signals are connected- skip if null
             if (settings_signal != null) {
                 SignalHandler.block((void*)app_settings,settings_signal);
                 validate_settings();
@@ -197,24 +196,16 @@ namespace AnalogueClock {
         private bool update_clock_time() {
             // Check the time, draw a new clock if necessary
             var current_time = new DateTime.now_local();
-            int curr_hour = current_time.get_hour();
-            int curr_min  = current_time.get_minute();
-            if (curr_min != old_minute || update_needed) {
-                old_minute = curr_min;
-                clock.hour = curr_hour;
-                clock.minute = curr_min;
+            if (current_time.get_minute() != old_minute || update_needed) {
+                old_minute = current_time.get_minute();
+                clock.hour = current_time.get_hour();
+                clock.minute = current_time.get_minute();
                 update_needed = false;
-                Cairo.ImageSurface surface = clock.get_clock_surface();
-                Idle.add(() => { update_panel_clock(surface, current_time.format("%x"));
-                                return false; });
+                Idle.add(() => { clock_image.set_from_surface(clock.get_clock_surface());
+                                 panel_box.set_tooltip_text(current_time.format("%x"));
+                                 return false; });
             }
             return keep_running;
-        }
-
-        private void update_panel_clock(Cairo.ImageSurface surface, string tooltip_date) {
-           // Load the generated svg into the panel icon
-            panel_box.set_tooltip_text(tooltip_date);
-            clock_image.set_from_surface(surface);
         }
 
         private bool find_applet(string find_uuid, string[] applet_list) {

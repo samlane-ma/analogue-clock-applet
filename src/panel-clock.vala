@@ -35,15 +35,15 @@ namespace PanelClockFunctions {
      */ 
         private const int IMAGE_SIZE   = 200;
         private const int RADIUS       =  92;
-        private const int MINHAND_LEN  =  76;
-        private const int HOURHAND_LEN =  56;
+        private const int MINHAND_LEN  =  72;
+        private const int HOURHAND_LEN =  52;
         private const int MARK_LEN     =  10;
         private const int LINE_WIDTH   =  8; 
         private double scale;
-        private double size;
+        private int size;
 
-        public ClockScalingInfo(double init_size){
-            scale = init_size / IMAGE_SIZE;
+        public ClockScalingInfo(int init_size){
+            scale = (double)init_size / IMAGE_SIZE;
             size = init_size;
         }
         public double radius { get {return RADIUS * scale;} }
@@ -54,7 +54,7 @@ namespace PanelClockFunctions {
             get {
                 return (RADIUS - MARK_LEN - _offset) * scale;} 
             }
-        public int center { get {return (int)size / 2;} }
+        public double center { get {return (double)size / 2;} }
         public double line_width {
             get {
                 if (LINE_WIDTH * scale < 2){
@@ -100,19 +100,15 @@ namespace PanelClockFunctions {
             // Returns a Cairo surface containing the clock image, which will get
             // added into a Gtk.Image
 
-            int hours = hour;
-            int mins = minute;
+            int hour_pos = hour;
+            int minute_pos = minute;
 
-            if (hours > 12) {
-                hours -= 12;
+            if (hour_pos > 12) {
+                hour_pos -= 12;
             }
-            hours = hours * 5 + (mins / 12);
-            // Clock looks better when drawn at even values for size / center
-            // so lets turn odd values into even ones
-            int draw_size = (size % 2 == 0? size : size -1);
-
-            ClockScalingInfo scaled = new ClockScalingInfo(draw_size);
-            Cairo.ImageSurface surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, draw_size, draw_size);
+            hour_pos = hour_pos * 5 + (minute_pos / 12);
+            ClockScalingInfo scaled = new ClockScalingInfo(size);
+            Cairo.ImageSurface surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, size, size);
             Cairo.Context cr = new Cairo.Context(surface);
             Gdk.RGBA color = new Gdk.RGBA();
 
@@ -131,14 +127,15 @@ namespace PanelClockFunctions {
 
             // draw clock hour markings
             if (draw_marks) {
+                cr.set_line_cap(Cairo.LineCap.BUTT);
                 cr.set_line_width(scaled.mark_width);
                 for (int i = 0; i < 12; i++) {
                     // draw 15 min marks larger than 5 min marks unless clock is small
-                    scaled.offset = ((i % 3 == 0 || draw_size < 30) ? 5 : 0);
-                    cr.move_to(get_coord("x", i * 5, scaled.radius, draw_size),
-                               get_coord("y", i * 5, scaled.radius, draw_size));
-                    cr.line_to(get_coord("x", i * 5, scaled.mark_len, draw_size),
-                               get_coord("y", i * 5, scaled.mark_len, draw_size));
+                    scaled.offset = ((i % 3 == 0 || size < 30) ? 5 : 0);
+                    cr.move_to(get_coord("x", i * 5, scaled.radius, scaled.center),
+                               get_coord("y", i * 5, scaled.radius, scaled.center));
+                    cr.line_to(get_coord("x", i * 5, scaled.mark_len, scaled.center),
+                               get_coord("y", i * 5, scaled.mark_len, scaled.center));
                     cr.stroke();
                 }
             }
@@ -147,13 +144,14 @@ namespace PanelClockFunctions {
             color.parse(hands_color);
             cr.set_source_rgba(color.red, color.green, color.blue, color.alpha);
             cr.set_line_width(scaled.hand_width);
+            cr.set_line_cap(Cairo.LineCap.ROUND);
             cr.move_to(scaled.center, scaled.center);
-            cr.line_to(get_coord("x",hours, scaled.hourhand_len, draw_size),
-                       get_coord("y",hours, scaled.hourhand_len, draw_size));
+            cr.line_to(get_coord("x", hour_pos, scaled.hourhand_len, scaled.center),
+                       get_coord("y", hour_pos, scaled.hourhand_len, scaled.center));
             cr.stroke();
             cr.move_to(scaled.center,  scaled.center);
-            cr.line_to(get_coord("x",mins, scaled.minhand_len, draw_size),
-                       get_coord("y",mins, scaled.minhand_len, draw_size));
+            cr.line_to(get_coord("x", minute_pos, scaled.minhand_len, scaled.center),
+                       get_coord("y", minute_pos, scaled.minhand_len, scaled.center));
             cr.stroke();
 
             // draw a little dot in the center
@@ -163,19 +161,19 @@ namespace PanelClockFunctions {
             return surface;
         }
 
-        private double get_coord(string c_type, int hand_position, double length, int scale) {
+        private double get_coord(string c_type, int hand_position, double length, double center) {
             // Returns the circle coordinates for the given minute/hour 
             // c_type can be either "x" or "y"
             hand_position -= 15;
             if (hand_position < 0) {
                 hand_position += 60;
             }
-            double radians = (hand_position * (Math.PI * 2) / 60);
+            double radians = (hand_position * FULL_CIRCLE / 60);
             if (c_type == "x") {
-                return scale / 2 + length * cos(radians);
+                return center + length * cos(radians);
             }
             else if (c_type == "y") {
-                return scale / 2 + length * sin(radians);
+                return center + length * sin(radians);
             }
             return 0;
         }
