@@ -7,6 +7,9 @@
  *  Thanks to the Ubuntu Budgie Developers for their assistance,
  *  examples, and pieces of code I borrowed to make this work.
  *
+ *  Portions of this applet are part of the Budgie Clock Applet
+ *  Copyright © 2014-2020 Budgie Desktop Developers
+ *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
@@ -30,6 +33,7 @@ namespace AnalogueClock {
 
     const int MAX_SIZE = 200;
     const int MIN_SIZE =  22;
+    const string CALENDAR_MIME = "text/calendar";
 
     public class Plugin : Budgie.Plugin, Peas.ExtensionBase {
 
@@ -126,10 +130,21 @@ namespace AnalogueClock {
         private bool update_needed;
 
         private Gtk.Box panel_box;
+        protected Gtk.EventBox widget;
         private Gtk.Image clock_image;
         private int max_size;
         private int old_minute;
         private PanelClock clock;
+        private Gtk.Grid grid_popover;
+        private Gtk.Button button_timesettings;
+        private Gtk.Button button_calendar;
+        private Gtk.Label popover_day;
+        private Gtk.Label popover_date;
+        private Gtk.Calendar calendar;
+
+        AppInfo? calprov = null;
+        Budgie.Popover? popover = null;
+        private unowned Budgie.PopoverManager? manager = null;
 
         public string uuid { public set; public get; }
 
@@ -140,10 +155,65 @@ namespace AnalogueClock {
             keep_running = true;
             clock = new PanelClock();
 
+            widget = new Gtk.EventBox();
             panel_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 1);
-            add(panel_box);
+            widget.add(panel_box);
+            add(widget);
             clock_image = new Gtk.Image();
             panel_box.pack_start(clock_image, false, false, 0);
+
+            button_timesettings = new Gtk.Button.with_label("Time and date settings");
+            button_timesettings.get_style_context().add_class(Gtk.STYLE_CLASS_FLAT);
+            button_calendar = new Gtk.Button.with_label("Open Calendar");
+            button_calendar.get_style_context().add_class(Gtk.STYLE_CLASS_FLAT);
+
+            popover_day = new Gtk.Label("");
+            popover_day.get_style_context ().add_class ("h1");
+            popover_day.halign = Gtk.Align.START;
+            popover_day.set_margin_top(10);
+            popover_day.set_margin_start(20);
+
+            popover_date = new Gtk.Label("");
+            popover_date.get_style_context ().add_class ("h2");
+            popover_date.halign = Gtk.Align.START;
+            popover_date.set_margin_start(20);
+            popover_date.set_margin_top(5);
+            popover_date.set_margin_bottom(15);
+
+            calendar = new Gtk.Calendar();
+
+            popover = new Budgie.Popover(widget);
+            grid_popover = new Gtk.Grid();
+            grid_popover.attach(popover_day,0,0,1,1);
+            grid_popover.attach(popover_date,0,1,1,1);
+            grid_popover.attach(calendar,0,2,1,1);
+            grid_popover.attach(button_calendar,0,3,1,1);
+            grid_popover.attach(button_timesettings,0,4,1,1);
+            popover.add(grid_popover);
+
+            widget.button_press_event.connect((e)=> {
+                if (e.button != 1) {
+                    return Gdk.EVENT_PROPAGATE;
+                }
+                if (popover.get_visible()) {
+                    popover.hide();
+                } else {
+                    this.manager.show_popover(widget);
+                }
+                return Gdk.EVENT_STOP;
+            });
+
+            calprov = AppInfo.get_default_for_type(CALENDAR_MIME, false);
+            var monitor = AppInfoMonitor.get();
+            monitor.changed.connect(update_cal);
+
+            button_timesettings.clicked.connect(on_date_activate);
+            button_calendar.set_sensitive(calprov != null);
+            button_calendar.clicked.connect(on_cal_activate);
+
+            update_cal();
+
+            popover.get_child().show_all();
             show_all();
 
             app_settings = new GLib.Settings ("com.github.samlane-ma.analogue-clock");
@@ -152,6 +222,11 @@ namespace AnalogueClock {
             Idle.add(() => { watch_applet(uuid); 
                              return false;});
             Timeout.add_seconds_full(GLib.Priority.LOW,5,update_clock_time);
+        }
+
+        public override void update_popovers(Budgie.PopoverManager? manager) {
+            this.manager = manager;
+            manager.register_popover(widget, popover);
         }
 
         private void load_settings(){
@@ -203,6 +278,8 @@ namespace AnalogueClock {
                 update_needed = false;
                 Idle.add(() => { clock_image.set_from_surface(clock.get_clock_surface());
                                  panel_box.set_tooltip_text(current_time.format("%x"));
+                                 popover_day.set_text(current_time.format("%A"));
+                                 popover_date.set_text(current_time.format("%e %B %Y"));
                                  return false; });
             }
             return keep_running;
@@ -274,6 +351,36 @@ namespace AnalogueClock {
 
         public override Gtk.Widget? get_settings_ui() {
             return new AnalogueClockSettings(this.get_applet_settings(uuid));
+        }
+
+        private void update_cal() {
+            calprov = AppInfo.get_default_for_type(CALENDAR_MIME, false);
+            button_calendar.set_sensitive(calprov != null);
+        }
+
+        private void on_date_activate() {
+            this.popover.hide();
+            var app_info = new DesktopAppInfo("gnome-datetime-panel.desktop");
+            if (app_info == null) {
+                return;
+            }
+            try {
+                app_info.launch(null, null);
+            } catch (Error e) {
+                message("Unable to launch gnome-datetime-panel.desktop: %s", e.message);
+            }
+        }
+
+        private void on_cal_activate() {
+            this.popover.hide();
+            if (calprov == null) {
+                return;
+            }
+            try {
+                calprov.launch(null, null);
+            } catch (Error e) {
+                message("Unable to launch %s: %s", calprov.get_name(), e.message);
+            }
         }
     }
 }
