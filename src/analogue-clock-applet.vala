@@ -198,6 +198,10 @@ namespace AnalogueClock {
                 if (popover.get_visible()) {
                     popover.hide();
                 } else {
+                    DateTime date = new DateTime.now_local();
+                    calendar.month = date.get_month () - 1;
+                    calendar.year = date.get_year ();
+                    calendar.select_day(date.get_day_of_month ());
                     this.manager.show_popover(widget);
                 }
                 return Gdk.EVENT_STOP;
@@ -206,12 +210,10 @@ namespace AnalogueClock {
             calprov = AppInfo.get_default_for_type(CALENDAR_MIME, false);
             var monitor = AppInfoMonitor.get();
             monitor.changed.connect(update_cal);
-
-            button_timesettings.clicked.connect(on_date_activate);
-            button_calendar.set_sensitive(calprov != null);
-            button_calendar.clicked.connect(on_cal_activate);
-
             update_cal();
+
+            button_timesettings.clicked.connect(on_date_activate);;
+            button_calendar.clicked.connect(on_cal_activate);
 
             popover.get_child().show_all();
             show_all();
