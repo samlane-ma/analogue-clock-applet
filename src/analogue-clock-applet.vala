@@ -44,11 +44,11 @@ namespace AnalogueClock {
 
     public class AnalogueClockSettings : Gtk.Grid {
 
-        private GLib.Settings app_settings;
+        private GLib.Settings settings;
 
         public AnalogueClockSettings(GLib.Settings? settings) {
 
-            app_settings = new GLib.Settings ("com.github.samlane-ma.analogue-clock");
+            this.settings = settings;
 
             string[] labels = {"", "Clock Size (px)","Frame Color","Hands Color",
                            "Face Color","Transparent face","","Show hour marks"};
@@ -63,58 +63,58 @@ namespace AnalogueClock {
                 this.attach(label, 0, i, 1, 1);
             }
 
-            Gtk.Adjustment adj = new Gtk.Adjustment(app_settings.get_int("clock-size"),
+            Gtk.Adjustment adj = new Gtk.Adjustment(settings.get_int("clock-size"),
                                                     MIN_SIZE,MAX_SIZE,1,1,0);
             Gtk.SpinButton spin_clock_size = new Gtk.SpinButton(adj,1.0,0);
             spin_clock_size.set_digits(0);
             this.attach(spin_clock_size, 1, 1, 1, 1);
 
-            loadcolor = app_settings.get_string("clock-outline");
+            loadcolor = settings.get_string("clock-outline");
             color = Gdk.RGBA();
             color.parse(loadcolor);
             Gtk.ColorButton buttonframe = new Gtk.ColorButton.with_rgba(color);
-            buttonframe.color_set.connect (() => 
+            buttonframe.color_set.connect (() =>
                              { on_color_changed(buttonframe,"clock-outline");});
             this.attach(buttonframe, 1, 2, 1, 1);
 
-            loadcolor = app_settings.get_string("clock-hands");
+            loadcolor = settings.get_string("clock-hands");
             color = Gdk.RGBA();
             color.parse(loadcolor);
             Gtk.ColorButton buttonhands = new Gtk.ColorButton.with_rgba(color);
-            buttonhands.color_set.connect (() => 
+            buttonhands.color_set.connect (() =>
                              { on_color_changed(buttonhands,"clock-hands");});
             this.attach(buttonhands, 1, 3, 1, 1);
 
-            loadcolor = app_settings.get_string("clock-face");
+            loadcolor = settings.get_string("clock-face");
             color = Gdk.RGBA();
             if (loadcolor == "none"){
                     color.parse("rgba(0,0,0,0)");
-            } 
+            }
             else {
                 color.parse(loadcolor);
             }
             Gtk.ColorButton buttonface = new Gtk.ColorButton.with_rgba(color);
-            buttonface.color_set.connect (() => 
+            buttonface.color_set.connect (() =>
                                  { on_color_changed(buttonface,"clock-face");});
             this.attach(buttonface, 1, 4, 1, 1);
 
             Gtk.Button button_set_transparent = new Gtk.Button.with_label("Set");
             button_set_transparent.clicked.connect(() => { buttonface.set_alpha(0);
-                                    app_settings.set_string("clock-face","none");});
+                                    settings.set_string("clock-face","none");});
             this.attach(button_set_transparent, 1, 5, 1, 1);
             Gtk.Switch switch_markings = new Gtk.Switch();
             switch_markings.set_halign(Gtk.Align.END);
             this.attach(switch_markings, 1, 7, 1, 1);
 
-            app_settings.bind("clock-size",spin_clock_size,"value",SettingsBindFlags.DEFAULT);
-            app_settings.bind("draw-marks",switch_markings,"active",SettingsBindFlags.DEFAULT);
+            settings.bind("clock-size",spin_clock_size,"value",SettingsBindFlags.DEFAULT);
+            settings.bind("draw-marks",switch_markings,"active",SettingsBindFlags.DEFAULT);
 
             this.show_all();
         }
 
         private void on_color_changed(Gtk.ColorButton button, string part) {
             Gdk.RGBA c = button.get_rgba();
-            app_settings.set_string(part, c.to_string());
+            settings.set_string(part, c.to_string());
         }
     }
 
@@ -122,7 +122,7 @@ namespace AnalogueClock {
 
         private GLib.Settings? panel_settings;
         private GLib.Settings? currpanelsubject_settings;
-        private GLib.Settings app_settings;
+        private GLib.Settings settings;
         private ulong panel_signal;
         private ulong? settings_signal;
 
@@ -149,6 +149,12 @@ namespace AnalogueClock {
         public string uuid { public set; public get; }
 
         public AnalogueClockApplet(string uuid) {
+            Object(uuid: uuid);
+
+		    /* Get our settings working first */
+		    this.settings_schema = "com.github.samlane-ma.analogue-clock";
+		    this.settings_prefix = "/com/solus-project/budgie-panel/instance/analogue-clock";
+		    this.settings = this.get_applet_settings(uuid);
 
             max_size = MIN_SIZE;
             update_needed = true;
@@ -218,10 +224,9 @@ namespace AnalogueClock {
             popover.get_child().show_all();
             show_all();
 
-            app_settings = new GLib.Settings ("com.github.samlane-ma.analogue-clock");
-            settings_signal = app_settings.changed.connect(force_clock_redraw);
+            settings_signal = settings.changed.connect(force_clock_redraw);
             load_settings();
-            Idle.add(() => { watch_applet(uuid); 
+            Idle.add(() => { watch_applet(uuid);
                              return false;});
             Timeout.add_seconds_full(GLib.Priority.LOW,5,update_clock_time);
         }
@@ -233,20 +238,20 @@ namespace AnalogueClock {
 
         private void load_settings(){
             // Load the settings
-            clock.size = app_settings.get_int("clock-size");
+            clock.size = settings.get_int("clock-size");
             if (clock.size > max_size) {
                 clock.size = max_size;
             }
             // Don't recursively trigger this if validate_settings fixes things
             if (settings_signal != null) {
-                SignalHandler.block((void*)app_settings,settings_signal);
+                SignalHandler.block((void*)settings,settings_signal);
                 validate_settings();
-                SignalHandler.unblock((void*)app_settings,settings_signal);
+                SignalHandler.unblock((void*)settings,settings_signal);
             }
-            clock.hands_color = app_settings.get_string("clock-hands");
-            clock.line_color = app_settings.get_string("clock-outline");
-            clock.fill_color = app_settings.get_string("clock-face");
-            clock.draw_marks = app_settings.get_boolean("draw-marks");
+            clock.hands_color = settings.get_string("clock-hands");
+            clock.line_color = settings.get_string("clock-outline");
+            clock.fill_color = settings.get_string("clock-face");
+            clock.draw_marks = settings.get_boolean("draw-marks");
         }
 
         private void validate_settings() {
@@ -256,9 +261,9 @@ namespace AnalogueClock {
             string[] default_color = {"#000000", "#000000", "#FFFFFF"};
             for (int i = 0; i < 3; i++) {
                 Gdk.RGBA testcolor = Gdk.RGBA();
-                string colorname = app_settings.get_string(setting_name[i]);
+                string colorname = settings.get_string(setting_name[i]);
                 if (colorname != "none" && !testcolor.parse(colorname)) {
-                    app_settings.set_string(setting_name[i],default_color[i]);
+                    settings.set_string(setting_name[i],default_color[i]);
                 }
             }
         }
@@ -314,7 +319,7 @@ namespace AnalogueClock {
                         applets = currpanelsubject_settings.get_strv("applets");
                         if (!find_applet(find_uuid, applets)) {
                             currpanelsubject_settings.disconnect(panel_signal);
-                            app_settings.disconnect(settings_signal);
+                            settings.disconnect(settings_signal);
                             keep_running = false;
                         }
                     });
@@ -328,7 +333,7 @@ namespace AnalogueClock {
             if (max_size < MIN_SIZE){
                 max_size = MIN_SIZE;
             }
-            int current_size = app_settings.get_int("clock-size");
+            int current_size = settings.get_int("clock-size");
             if (current_size > max_size) {
                 clock.size = max_size;
             }

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-    <schema path="/com/github/samlane-ma/analogue-clock/" 
-              id="com.github.samlane-ma.analogue-clock">
+    <schema id="com.github.samlane-ma.analogue-clock">
         <key name="clock-size" type="i">
             <range min="22" max="200"/>
             <summary>Clock Size</summary>
