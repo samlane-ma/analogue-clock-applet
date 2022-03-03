@@ -367,14 +367,18 @@ namespace AnalogueClock {
 
         private void on_date_activate() {
             this.popover.hide();
-            var app_info = new DesktopAppInfo("gnome-datetime-panel.desktop");
+            string desktop_file = "gnome-datetime-panel.desktop";
+            if (Environment.find_program_in_path("budgie-control-center") != null) {
+                desktop_file = "budgie-datetime-panel.desktop";
+            }
+            var app_info = new DesktopAppInfo(desktop_file);
             if (app_info == null) {
                 return;
             }
             try {
                 app_info.launch(null, null);
             } catch (Error e) {
-                message("Unable to launch gnome-datetime-panel.desktop: %s", e.message);
+                message("Unable to launch %s: %s", desktop_file, e.message);
             }
         }
 
