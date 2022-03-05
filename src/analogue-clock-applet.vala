@@ -28,6 +28,7 @@
 
 using Gtk, Gdk, Cairo;
 using PanelClockFunctions;
+using TimeZoneData;
 
 namespace AnalogueClock {
 
@@ -45,18 +46,23 @@ namespace AnalogueClock {
     public class AnalogueClockSettings : Gtk.Grid {
 
         private GLib.Settings settings;
+        private Gtk.ComboBoxText combo_tz;
+
+        private void on_tz_selected() {
+            print("\n%s\n", seconds_to_utc(TIMES[combo_tz.get_active()]));
+        }
 
         public AnalogueClockSettings(GLib.Settings? settings) {
 
             this.settings = settings;
 
-            string[] labels = {"", "Clock Size (px)","Frame Color","Hands Color",
-                           "Face Color","Transparent face","","Show hour marks"};
-
+            string[] labels = {"", "Clock Size (px)", "Frame Color", "Hands Color",
+                               "Face Color", "Transparent face", "", "Show hour marks",
+                               "", "Time Zone (UTC)", "", "Show Clock Name"};
             Gdk.RGBA color;
             string loadcolor;
 
-            for (int i=0; i < 8; i++) {
+            for (int i=0; i < labels.length; i++) {
                 Gtk.Label label = new Gtk.Label(labels[i]);
                 label.set_halign(Gtk.Align.START);
                 label.set_valign(Gtk.Align.CENTER);
@@ -105,6 +111,22 @@ namespace AnalogueClock {
             Gtk.Switch switch_markings = new Gtk.Switch();
             switch_markings.set_halign(Gtk.Align.END);
             this.attach(switch_markings, 1, 7, 1, 1);
+
+            combo_tz = new Gtk.ComboBoxText();
+            combo_tz.set_wrap_width(5);
+            for (int i = 0; i < TIMES.length; i++){
+                combo_tz.insert_text(i, seconds_to_utc(TIMES[i]));
+            }
+            this.attach(combo_tz, 1, 9, 1, 1);
+            combo_tz.changed.connect(on_tz_selected);
+
+            Gtk.Switch switch_use_name = new Gtk.Switch();
+            switch_use_name.set_halign(Gtk.Align.END);
+            Gtk.Box namebox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 5);
+            Gtk.Entry entry_name = new Gtk.Entry();
+            namebox.pack_start(entry_name, true, true);
+            namebox.pack_end(switch_use_name, false, false);
+            this.attach(namebox, 0, 12, 2, 1);
 
             settings.bind("clock-size",spin_clock_size,"value",SettingsBindFlags.DEFAULT);
             settings.bind("draw-marks",switch_markings,"active",SettingsBindFlags.DEFAULT);

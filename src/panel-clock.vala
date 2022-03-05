@@ -32,13 +32,13 @@ namespace PanelClockFunctions {
      * proportionate values are returned, while keeping some from scaling too
      * low and becoming hard to see at smaller sizes. Lenthy, but keeps the
      * Cairo drawing arguments more obvious.
-     */ 
+     */
         private const int IMAGE_SIZE   = 200;
         private const int RADIUS       =  92;
         private const int MINHAND_LEN  =  72;
         private const int HOURHAND_LEN =  52;
         private const int MARK_LEN     =  10;
-        private const int LINE_WIDTH   =  8; 
+        private const int LINE_WIDTH   =  8;
         private double scale;
         private int size;
 
@@ -52,13 +52,13 @@ namespace PanelClockFunctions {
         public double offset {set; default = 0;}
         public double mark_len {
             get {
-                return (RADIUS - MARK_LEN - _offset) * scale;} 
+                return (RADIUS - MARK_LEN - _offset) * scale;}
             }
         public double center { get {return (double)size / 2;} }
         public double line_width {
             get {
-                if (LINE_WIDTH * scale < 2){
-                    return 2;
+                if (size < 40 ){
+                    return 1;
                 }
                 else{
                     return LINE_WIDTH * scale;
@@ -67,7 +67,8 @@ namespace PanelClockFunctions {
         }
         public double hand_width {
             get {
-                if (LINE_WIDTH * scale < 2){ return 2;
+                if (size < 40){
+                    return 1;
                 }
                 else{
                     return LINE_WIDTH * scale;
@@ -76,8 +77,8 @@ namespace PanelClockFunctions {
         }
         public double mark_width{
             get {
-                if (LINE_WIDTH * scale * 0.75  < 2){
-                    return 2;
+                if (size < 60){
+                    return 1;
                 }
                 else{
                     return LINE_WIDTH * scale * 0.75;
@@ -87,7 +88,7 @@ namespace PanelClockFunctions {
     }
 
     public class PanelClock {
-    
+
         public int hour {get; set;}
         public int minute {get; set;}
         public int size {get; set;}
@@ -170,7 +171,7 @@ namespace PanelClockFunctions {
         }
 
         private double get_coord(string c_type, int hand_position, double length, double center) {
-            // Returns the circle coordinates for the given minute/hour 
+            // Returns the circle coordinates for the given minute/hour
             // c_type can be either "x" or "y"
             hand_position -= 15;
             if (hand_position < 0) {
@@ -185,5 +186,5 @@ namespace PanelClockFunctions {
             }
             return 0;
         }
-    } 
+    }
 }

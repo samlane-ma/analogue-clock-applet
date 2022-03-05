@@ -7,7 +7,8 @@ install_data('AnalogueClock.plugin', install_dir: LIB_INSTALL_DIR)
 
 AnalogueClockSources = [
 'analogue-clock-applet.vala',
-'panel-clock.vala' 
+'panel-clock.vala',
+'timezonedata.vala'
 ]
 
 AnalogueClockDependencies = [
