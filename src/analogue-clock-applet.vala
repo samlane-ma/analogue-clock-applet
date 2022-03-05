@@ -49,7 +49,6 @@ namespace AnalogueClock {
         private Gtk.ComboBoxText combo_tz;
 
         private void on_tz_selected() {
-            print("\n%s\n", seconds_to_utc(TIMES[combo_tz.get_active()]));
         }
 
         public AnalogueClockSettings(GLib.Settings? settings) {

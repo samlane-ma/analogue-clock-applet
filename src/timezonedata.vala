@@ -12,15 +12,5 @@ namespace TimeZoneData {
         string hour = (time / 3600).to_string("%+03i");
         string minute = (time.abs() % 3600 / 60).to_string("%02i");
         return ("UTC" + hour + ":" + minute);
-}
-
-/*void main () {
-
-    for (int i=0; i < TIMES.length; i++) {
-        string utc_time = seconds_to_utc(TIMES[i]);
-        stdout.printf("%s\n", utc_time);
     }
-}
-*/
-
 }
