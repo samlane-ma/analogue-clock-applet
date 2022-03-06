@@ -29,6 +29,11 @@
             <description>Draw the hour markings around the face of the clock</description>
             <default>false</default>
         </key>
+        <key name="use-local-time" type="b">
+            <summary>Use local time</summary>
+            <description>Show the clock using the local time</description>
+            <default>true</default>
+        </key>
         <key name="time-offset" type="i">
             <summary>Time Zone Offset</summary>
             <description>Number of seconds +/- local time to set the time</description>

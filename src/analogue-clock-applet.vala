@@ -56,8 +56,8 @@ namespace AnalogueClock {
             this.settings = settings;
 
             string[] labels = {"", "Clock Size (px)", "Frame Color", "Hands Color",
-                               "Face Color", "Transparent face", "", "Show hour marks",
-                               "", "Time Zone (UTC)", "", "Show Clock Name"};
+                               "Face Color", "Transparent face", "Show hour marks",
+                               "", "Use Local Time", "Time Zone (UTC)", "Show Clock Name"};
             Gdk.RGBA color;
             string loadcolor;
 
@@ -109,7 +109,11 @@ namespace AnalogueClock {
             this.attach(button_set_transparent, 1, 5, 1, 1);
             Gtk.Switch switch_markings = new Gtk.Switch();
             switch_markings.set_halign(Gtk.Align.END);
-            this.attach(switch_markings, 1, 7, 1, 1);
+            this.attach(switch_markings, 1, 6, 1, 1);
+
+            Gtk.Switch switch_local = new Gtk.Switch();
+            switch_local.set_halign(Gtk.Align.END);
+            this.attach(switch_local, 1, 8, 1, 1);
 
             combo_tz = new Gtk.ComboBoxText();
             combo_tz.set_wrap_width(5);
@@ -121,11 +125,12 @@ namespace AnalogueClock {
 
             Gtk.Switch switch_use_name = new Gtk.Switch();
             switch_use_name.set_halign(Gtk.Align.END);
+            this.attach(switch_use_name, 1, 10, 1, 1);
             Gtk.Box namebox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 5);
             Gtk.Entry entry_name = new Gtk.Entry();
-            namebox.pack_start(entry_name, true, true);
-            namebox.pack_end(switch_use_name, false, false);
-            this.attach(namebox, 0, 12, 2, 1);
+            namebox.pack_start(new Gtk.Label("Clock name: "), false, false);
+            namebox.pack_end(entry_name, true, true);
+            this.attach(namebox, 0, 11, 2, 1);
 
             settings.bind("clock-size",spin_clock_size,"value",SettingsBindFlags.DEFAULT);
             settings.bind("draw-marks",switch_markings,"active",SettingsBindFlags.DEFAULT);
