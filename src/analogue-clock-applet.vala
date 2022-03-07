@@ -247,7 +247,13 @@ namespace AnalogueClock {
                 if (popover.get_visible()) {
                     popover.hide();
                 } else {
-                    DateTime date = new DateTime.now_local();
+                    DateTime date;
+                    if (!use_timezone) {
+                        date = new DateTime.now_local();
+                    }
+                    else {
+                        date = new DateTime.now_utc().add_seconds(time_offset);
+                    }
                     calendar.month = date.get_month () - 1;
                     calendar.year = date.get_year ();
                     calendar.select_day(date.get_day_of_month ());
