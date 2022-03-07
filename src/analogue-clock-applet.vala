@@ -28,6 +28,7 @@
 
 using Gtk, Gdk, Cairo;
 using PanelClockFunctions;
+using TimeZoneData;
 
 namespace AnalogueClock {
 
@@ -45,18 +46,19 @@ namespace AnalogueClock {
     public class AnalogueClockSettings : Gtk.Grid {
 
         private GLib.Settings settings;
+        private Gtk.ComboBoxText combo_tz;
 
         public AnalogueClockSettings(GLib.Settings? settings) {
 
             this.settings = settings;
 
-            string[] labels = {"", "Clock Size (px)","Frame Color","Hands Color",
-                           "Face Color","Transparent face","","Show hour marks"};
-
+            string[] labels = {"Clock Size (px)", "Frame Color", "Hands Color",
+                               "Face Color", "Transparent face", "Show hour marks",
+                               "", "Select Timezone", "Time Zone (UTC)","", "Show Clock Name"};
             Gdk.RGBA color;
             string loadcolor;
 
-            for (int i=0; i < 8; i++) {
+            for (int i=0; i < labels.length; i++) {
                 Gtk.Label label = new Gtk.Label(labels[i]);
                 label.set_halign(Gtk.Align.START);
                 label.set_valign(Gtk.Align.CENTER);
@@ -67,7 +69,7 @@ namespace AnalogueClock {
                                                     MIN_SIZE,MAX_SIZE,1,1,0);
             Gtk.SpinButton spin_clock_size = new Gtk.SpinButton(adj,1.0,0);
             spin_clock_size.set_digits(0);
-            this.attach(spin_clock_size, 1, 1, 1, 1);
+            this.attach(spin_clock_size, 1, 0, 1, 1);
 
             loadcolor = settings.get_string("clock-outline");
             color = Gdk.RGBA();
@@ -75,7 +77,7 @@ namespace AnalogueClock {
             Gtk.ColorButton buttonframe = new Gtk.ColorButton.with_rgba(color);
             buttonframe.color_set.connect (() =>
                              { on_color_changed(buttonframe,"clock-outline");});
-            this.attach(buttonframe, 1, 2, 1, 1);
+            this.attach(buttonframe, 1, 1, 1, 1);
 
             loadcolor = settings.get_string("clock-hands");
             color = Gdk.RGBA();
@@ -83,7 +85,7 @@ namespace AnalogueClock {
             Gtk.ColorButton buttonhands = new Gtk.ColorButton.with_rgba(color);
             buttonhands.color_set.connect (() =>
                              { on_color_changed(buttonhands,"clock-hands");});
-            this.attach(buttonhands, 1, 3, 1, 1);
+            this.attach(buttonhands, 1, 2, 1, 1);
 
             loadcolor = settings.get_string("clock-face");
             color = Gdk.RGBA();
@@ -96,18 +98,48 @@ namespace AnalogueClock {
             Gtk.ColorButton buttonface = new Gtk.ColorButton.with_rgba(color);
             buttonface.color_set.connect (() =>
                                  { on_color_changed(buttonface,"clock-face");});
-            this.attach(buttonface, 1, 4, 1, 1);
+            this.attach(buttonface, 1, 3, 1, 1);
 
             Gtk.Button button_set_transparent = new Gtk.Button.with_label("Set");
             button_set_transparent.clicked.connect(() => { buttonface.set_alpha(0);
                                     settings.set_string("clock-face","none");});
-            this.attach(button_set_transparent, 1, 5, 1, 1);
+            this.attach(button_set_transparent, 1, 4, 1, 1);
             Gtk.Switch switch_markings = new Gtk.Switch();
             switch_markings.set_halign(Gtk.Align.END);
-            this.attach(switch_markings, 1, 7, 1, 1);
+            this.attach(switch_markings, 1, 5, 1, 1);
+
+            Gtk.Switch switch_local = new Gtk.Switch();
+            switch_local.set_halign(Gtk.Align.END);
+            this.attach(switch_local, 1, 7, 1, 1);
+            combo_tz = new Gtk.ComboBoxText();
+            combo_tz.set_wrap_width(5);
+            for (int i = 0; i < TIMES.length; i++){
+                combo_tz.insert_text(i, seconds_to_utc(TIMES[i]));
+            }
+            switch_local.notify["active"].connect(() => {
+                                          combo_tz.set_sensitive(switch_local.get_active()); } );
+            this.attach(combo_tz, 1, 8, 1, 1);
+
+            Gtk.Switch switch_use_name = new Gtk.Switch();
+            switch_use_name.set_halign(Gtk.Align.END);
+            this.attach(switch_use_name, 1, 10, 1, 1);
+            Gtk.Box namebox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 5);
+            Gtk.Entry entry_name = new Gtk.Entry();
+            entry_name.set_max_length(30);
+            switch_use_name.notify["active"].connect(() => {
+                                          entry_name.set_sensitive(switch_use_name.get_active()); } );
+            namebox.pack_start(new Gtk.Label("Clock name: "), false, false);
+            namebox.pack_end(entry_name, true, true);
+            this.attach(namebox, 0, 11, 2, 1);
 
             settings.bind("clock-size",spin_clock_size,"value",SettingsBindFlags.DEFAULT);
             settings.bind("draw-marks",switch_markings,"active",SettingsBindFlags.DEFAULT);
+            settings.bind("show-name", switch_use_name, "active", SettingsBindFlags.DEFAULT);
+            settings.bind("use-time-zone", switch_local, "active", SettingsBindFlags.DEFAULT);
+            settings.bind("time-zone", combo_tz, "active", SettingsBindFlags.DEFAULT);
+            settings.bind("clock-name", entry_name, "text", SettingsBindFlags.DEFAULT);
+            combo_tz.set_sensitive(settings.get_boolean("use-time-zone"));
+            entry_name.set_sensitive(settings.get_boolean("show-name"));
 
             this.show_all();
         }
@@ -140,7 +172,13 @@ namespace AnalogueClock {
         private Gtk.Button button_calendar;
         private Gtk.Label popover_day;
         private Gtk.Label popover_date;
+        private Gtk.Label popover_name;
         private Gtk.Calendar calendar;
+        private DateTime current_time;
+
+        private int time_offset = 0;
+        private bool use_timezone = false;
+        private string clock_name = "";
 
         AppInfo? calprov = null;
         Budgie.Popover? popover = null;
@@ -186,15 +224,20 @@ namespace AnalogueClock {
             popover_date.set_margin_top(5);
             popover_date.set_margin_bottom(15);
 
+            popover_name = new Gtk.Label("");
+            popover_name.set_halign(Gtk.Align.END);
+            popover_name.set_margin_end(20);
+
             calendar = new Gtk.Calendar();
 
             popover = new Budgie.Popover(widget);
             grid_popover = new Gtk.Grid();
-            grid_popover.attach(popover_day,0,0,1,1);
+            grid_popover.attach(popover_day,0,0,2,1);
             grid_popover.attach(popover_date,0,1,1,1);
-            grid_popover.attach(calendar,0,2,1,1);
-            grid_popover.attach(button_calendar,0,3,1,1);
-            grid_popover.attach(button_timesettings,0,4,1,1);
+            grid_popover.attach(popover_name,1,1,1,1);
+            grid_popover.attach(calendar,0,2,2,1);
+            grid_popover.attach(button_calendar,0,3,2,1);
+            grid_popover.attach(button_timesettings,0,4,2,1);
             popover.add(grid_popover);
 
             widget.button_press_event.connect((e)=> {
@@ -204,7 +247,13 @@ namespace AnalogueClock {
                 if (popover.get_visible()) {
                     popover.hide();
                 } else {
-                    DateTime date = new DateTime.now_local();
+                    DateTime date;
+                    if (!use_timezone) {
+                        date = new DateTime.now_local();
+                    }
+                    else {
+                        date = new DateTime.now_utc().add_seconds(time_offset);
+                    }
                     calendar.month = date.get_month () - 1;
                     calendar.year = date.get_year ();
                     calendar.select_day(date.get_day_of_month ());
@@ -238,6 +287,20 @@ namespace AnalogueClock {
 
         private void load_settings(){
             // Load the settings
+            use_timezone = settings.get_boolean("use-time-zone");
+            int timezone = settings.get_int("time-zone");
+            time_offset = TIMES[timezone];
+            clock_name = "Local Time";
+            if (settings.get_boolean("use-time-zone")) {
+                use_timezone = true;
+                clock_name = seconds_to_utc(time_offset);
+            }
+            if (settings.get_boolean("show-name")) {
+                string load_name = settings.get_string("clock-name").strip();
+                if (load_name != "") {
+                    clock_name = load_name;
+                }
+            }
             clock.size = settings.get_int("clock-size");
             if (clock.size > max_size) {
                 clock.size = max_size;
@@ -277,16 +340,22 @@ namespace AnalogueClock {
 
         private bool update_clock_time() {
             // Check the time, draw a new clock if necessary
-            var current_time = new DateTime.now_local();
+            if (use_timezone) {
+                current_time = new DateTime.now_utc().add_seconds(time_offset);
+            }
+            else {
+                current_time = new DateTime.now_local();
+            }
             if (current_time.get_minute() != old_minute || update_needed) {
                 old_minute = current_time.get_minute();
                 clock.hour = current_time.get_hour();
                 clock.minute = current_time.get_minute();
                 update_needed = false;
                 Idle.add(() => { clock_image.set_from_surface(clock.get_clock_surface());
-                                 panel_box.set_tooltip_text(current_time.format("%x"));
+                                 panel_box.set_tooltip_text(clock_name + "\n" + current_time.format("%x"));
                                  popover_day.set_text(current_time.format("%A"));
                                  popover_date.set_text(current_time.format("%e %B %Y"));
+                                 popover_name.set_text(clock_name);
                                  return false; });
             }
             return keep_running;

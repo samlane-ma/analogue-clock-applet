@@ -29,5 +29,25 @@
             <description>Draw the hour markings around the face of the clock</description>
             <default>false</default>
         </key>
+        <key name="use-time-zone" type="b">
+            <summary>Use non-local time</summary>
+            <description>Show the clock using a different time zone</description>
+            <default>true</default>
+        </key>
+        <key name="time-zone" type="i">
+            <summary>Time Zone</summary>
+            <description>Alternate timezone to show the clock in</description>
+            <default>14</default>
+        </key>
+        <key name="clock-name" type="s">
+            <summary>Clock Name</summary>
+            <description>Custom name for the panel clock</description>
+            <default>""</default>
+        </key>
+        <key name="show-name" type="b">
+            <summary>Show Clock Name</summary>
+            <description>Display a custom name for the panel clock</description>
+            <default>false</default>
+        </key>
     </schema> 
 </schemalist>
