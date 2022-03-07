@@ -225,19 +225,19 @@ namespace AnalogueClock {
             popover_date.set_margin_bottom(15);
 
             popover_name = new Gtk.Label("");
-            popover_name.set_halign(Gtk.Align.END);
+            popover_name.set_halign(Gtk.Align.CENTER);
             popover_name.set_margin_end(20);
 
             calendar = new Gtk.Calendar();
 
             popover = new Budgie.Popover(widget);
             grid_popover = new Gtk.Grid();
-            grid_popover.attach(popover_day,0,0,2,1);
-            grid_popover.attach(popover_date,0,1,1,1);
-            grid_popover.attach(popover_name,1,1,1,1);
-            grid_popover.attach(calendar,0,2,2,1);
-            grid_popover.attach(button_calendar,0,3,2,1);
-            grid_popover.attach(button_timesettings,0,4,2,1);
+            grid_popover.attach(popover_name,0,0,2,1);
+            grid_popover.attach(popover_day,0,1,2,1);
+            grid_popover.attach(popover_date,0,2,2,1);
+            grid_popover.attach(calendar,0,3,2,1);
+            grid_popover.attach(button_calendar,0,4,2,1);
+            grid_popover.attach(button_timesettings,0,5,2,1);
             popover.add(grid_popover);
 
             widget.button_press_event.connect((e)=> {
