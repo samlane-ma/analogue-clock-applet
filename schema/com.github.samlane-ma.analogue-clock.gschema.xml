@@ -32,7 +32,7 @@
         <key name="use-time-zone" type="b">
             <summary>Use non-local time</summary>
             <description>Show the clock using a different time zone</description>
-            <default>true</default>
+            <default>false</default>
         </key>
         <key name="time-zone" type="i">
             <summary>Time Zone</summary>
