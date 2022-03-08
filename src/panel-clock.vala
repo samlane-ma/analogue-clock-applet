@@ -90,7 +90,7 @@ namespace PanelClockFunctions {
             ClockScalingInfo scaled = new ClockScalingInfo(size);
             Cairo.ImageSurface surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, size, size);
             Cairo.Context cr = new Cairo.Context(surface);
-            Gdk.RGBA color = new Gdk.RGBA();
+            Gdk.RGBA color = Gdk.RGBA();
 
             // Clock face
             color.parse(fill_color);

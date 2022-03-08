@@ -101,7 +101,10 @@ namespace AnalogueClock {
             this.attach(buttonface, 1, 3, 1, 1);
 
             Gtk.Button button_set_transparent = new Gtk.Button.with_label("Set");
-            button_set_transparent.clicked.connect(() => { buttonface.set_alpha(0);
+            button_set_transparent.clicked.connect(() => {
+                                    Gdk.RGBA transp = Gdk.RGBA();
+                                    transp.parse("rgba(0,0,0,0)");
+                                    buttonface.set_rgba(transp);
                                     settings.set_string("clock-face","none");});
             this.attach(button_set_transparent, 1, 4, 1, 1);
             Gtk.Switch switch_markings = new Gtk.Switch();
