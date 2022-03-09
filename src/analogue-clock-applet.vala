@@ -170,21 +170,13 @@ namespace AnalogueClock {
         private int max_size;
         private int old_minute;
         private PanelClock clock;
-        private Gtk.Grid grid_popover;
-        private Gtk.Button button_timesettings;
-        private Gtk.Button button_calendar;
-        private Gtk.Label popover_day;
-        private Gtk.Label popover_date;
-        private Gtk.Label popover_name;
-        private Gtk.Calendar calendar;
         private DateTime current_time;
 
         private int time_offset = 0;
         private bool use_timezone = false;
         private string clock_name = "";
 
-        AppInfo? calprov = null;
-        Budgie.Popover? popover = null;
+        ClockPopover.ClockPopover? popover = null;
         private unowned Budgie.PopoverManager? manager = null;
 
         public string uuid { public set; public get; }
@@ -203,45 +195,13 @@ namespace AnalogueClock {
             clock = new PanelClock();
 
             widget = new Gtk.EventBox();
+            popover = new ClockPopover.ClockPopover(widget);
+
             panel_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 1);
             widget.add(panel_box);
             add(widget);
             clock_image = new Gtk.Image();
             panel_box.pack_start(clock_image, false, false, 0);
-
-            button_timesettings = new Gtk.Button.with_label("Time and date settings");
-            button_timesettings.get_style_context().add_class(Gtk.STYLE_CLASS_FLAT);
-            button_calendar = new Gtk.Button.with_label("Open Calendar");
-            button_calendar.get_style_context().add_class(Gtk.STYLE_CLASS_FLAT);
-
-            popover_day = new Gtk.Label("");
-            popover_day.get_style_context ().add_class ("h1");
-            popover_day.halign = Gtk.Align.START;
-            popover_day.set_margin_top(10);
-            popover_day.set_margin_start(20);
-
-            popover_date = new Gtk.Label("");
-            popover_date.get_style_context ().add_class ("h2");
-            popover_date.halign = Gtk.Align.START;
-            popover_date.set_margin_start(20);
-            popover_date.set_margin_top(5);
-            popover_date.set_margin_bottom(15);
-
-            popover_name = new Gtk.Label("");
-            popover_name.set_halign(Gtk.Align.CENTER);
-            popover_name.set_margin_end(20);
-
-            calendar = new Gtk.Calendar();
-
-            popover = new Budgie.Popover(widget);
-            grid_popover = new Gtk.Grid();
-            grid_popover.attach(popover_name,0,0,2,1);
-            grid_popover.attach(popover_day,0,1,2,1);
-            grid_popover.attach(popover_date,0,2,2,1);
-            grid_popover.attach(calendar,0,3,2,1);
-            grid_popover.attach(button_calendar,0,4,2,1);
-            grid_popover.attach(button_timesettings,0,5,2,1);
-            popover.add(grid_popover);
 
             widget.button_press_event.connect((e)=> {
                 if (e.button != 1) {
@@ -257,21 +217,11 @@ namespace AnalogueClock {
                     else {
                         date = new DateTime.now_utc().add_seconds(time_offset);
                     }
-                    calendar.month = date.get_month () - 1;
-                    calendar.year = date.get_year ();
-                    calendar.select_day(date.get_day_of_month ());
+                    popover.select_day(date);
                     this.manager.show_popover(widget);
                 }
                 return Gdk.EVENT_STOP;
             });
-
-            calprov = AppInfo.get_default_for_type(CALENDAR_MIME, false);
-            var monitor = AppInfoMonitor.get();
-            monitor.changed.connect(update_cal);
-            update_cal();
-
-            button_timesettings.clicked.connect(on_date_activate);;
-            button_calendar.clicked.connect(on_cal_activate);
 
             popover.get_child().show_all();
             show_all();
@@ -356,9 +306,9 @@ namespace AnalogueClock {
                 update_needed = false;
                 Idle.add(() => { clock_image.set_from_surface(clock.get_clock_surface());
                                  panel_box.set_tooltip_text(clock_name + "\n" + current_time.format("%x"));
-                                 popover_day.set_text(current_time.format("%A"));
-                                 popover_date.set_text(current_time.format("%e %B %Y"));
-                                 popover_name.set_text(clock_name);
+                                 popover.update_labels(current_time.format("%A"),
+                                                       current_time.format("%e %B %Y"),
+                                                       clock_name);
                                  return false; });
             }
             return keep_running;
@@ -432,39 +382,6 @@ namespace AnalogueClock {
             return new AnalogueClockSettings(this.get_applet_settings(uuid));
         }
 
-        private void update_cal() {
-            calprov = AppInfo.get_default_for_type(CALENDAR_MIME, false);
-            button_calendar.set_sensitive(calprov != null);
-        }
-
-        private void on_date_activate() {
-            this.popover.hide();
-            string desktop_file = "gnome-datetime-panel.desktop";
-            if (Environment.find_program_in_path("budgie-control-center") != null) {
-                desktop_file = "budgie-datetime-panel.desktop";
-            }
-            var app_info = new DesktopAppInfo(desktop_file);
-            if (app_info == null) {
-                return;
-            }
-            try {
-                app_info.launch(null, null);
-            } catch (Error e) {
-                message("Unable to launch %s: %s", desktop_file, e.message);
-            }
-        }
-
-        private void on_cal_activate() {
-            this.popover.hide();
-            if (calprov == null) {
-                return;
-            }
-            try {
-                calprov.launch(null, null);
-            } catch (Error e) {
-                message("Unable to launch %s: %s", calprov.get_name(), e.message);
-            }
-        }
     }
 }
 

@@ -8,7 +8,8 @@ install_data('AnalogueClock.plugin', install_dir: LIB_INSTALL_DIR)
 AnalogueClockSources = [
 'analogue-clock-applet.vala',
 'panel-clock.vala',
-'timezonedata.vala'
+'timezonedata.vala',
+'clock-popover.vala'
 ]
 
 AnalogueClockDependencies = [
@@ -22,8 +23,7 @@ meson.get_compiler('c').find_library('m', required: false)
 AnalogueClockValaArgs = [
 '--pkg=config', 
 '--vapidir=' + VAPI_DIR, 
-'--target-glib=2.38', 
-'--enable-deprecated'
+'--target-glib=2.38'
 ]
 
 AnalogueClockCArgs = [
