@@ -3,7 +3,7 @@
  *
  *  Creates and Returns a Cairo Surface With a Clock Image
  *
- *  Copyright © 2020 Samuel Lane
+ *  Copyright © 2020-2022 Samuel Lane
  *  http://github.com/samlane-ma/
  *
  *  This program is free software: you can redistribute it and/or modify
