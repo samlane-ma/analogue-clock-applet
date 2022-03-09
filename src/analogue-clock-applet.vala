@@ -1,14 +1,14 @@
 /*
  *  Analogue Clock Applet for the Budgie Panel
  *
- *  Copyright © 2020 Samuel Lane
+ *  Copyright © 2020 - 2022 Samuel Lane
  *  http://github.com/samlane-ma/
  *
  *  Thanks to the Ubuntu Budgie Developers for their assistance,
  *  examples, and pieces of code I borrowed to make this work.
  *
  *  Portions of this applet are part of the Budgie Clock Applet
- *  Copyright © 2014-2020 Budgie Desktop Developers
+ *  Copyright © 2014-2022 Budgie Desktop Developers
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@ namespace AnalogueClock {
 
     const int MAX_SIZE = 200;
     const int MIN_SIZE =  22;
-    const string CALENDAR_MIME = "text/calendar";
 
     public class Plugin : Budgie.Plugin, Peas.ExtensionBase {
 

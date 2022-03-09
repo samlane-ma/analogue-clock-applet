@@ -1,3 +1,14 @@
+/*
+ *  ClockPopover
+ *
+ *  Popover used by the Analogue Clock Applet to display a calendar and
+ *  options to open a Calendar application and system time settings
+ *
+ *  Copyright © 2020-2022 Samuel Lane
+ *  http://github.com/samlane-ma/
+ *
+ */
+
 using Gtk, Gdk;
 
 namespace ClockPopover {
@@ -15,7 +26,6 @@ namespace ClockPopover {
         private AppInfo calprov;
 
         private const string CALENDAR_MIME = "text/calendar";
-
 
         public ClockPopover(Gtk.Widget relative_parent) {
             Object(relative_to: relative_parent);
