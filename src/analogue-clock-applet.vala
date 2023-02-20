@@ -27,13 +27,13 @@
  */
 
 using Gtk, Gdk, Cairo;
-using PanelClockFunctions;
 using TimeZoneData;
 
 namespace AnalogueClock {
 
     const int MAX_SIZE = 200;
     const int MIN_SIZE =  22;
+    const string[] clock_parts = { "clock-face", "clock-outline", "clock-hands" };
 
     public class Plugin : Budgie.Plugin, Peas.ExtensionBase {
 
@@ -64,8 +64,7 @@ namespace AnalogueClock {
                 this.attach(label, 0, i, 1, 1);
             }
 
-            Gtk.Adjustment adj = new Gtk.Adjustment(settings.get_int("clock-size"),
-                                                    MIN_SIZE,MAX_SIZE,1,1,0);
+            Gtk.Adjustment adj = new Gtk.Adjustment(settings.get_int("clock-size"), MIN_SIZE, MAX_SIZE, 1, 1, 0);
             Gtk.SpinButton spin_clock_size = new Gtk.SpinButton(adj,1.0,0);
             spin_clock_size.set_digits(0);
             this.attach(spin_clock_size, 1, 0, 1, 1);
@@ -74,16 +73,18 @@ namespace AnalogueClock {
             color = Gdk.RGBA();
             color.parse(loadcolor);
             Gtk.ColorButton buttonframe = new Gtk.ColorButton.with_rgba(color);
-            buttonframe.color_set.connect (() =>
-                             { on_color_changed(buttonframe,"clock-outline");});
+            buttonframe.color_set.connect (() => {
+                on_color_changed(buttonframe,"clock-outline");
+            });
             this.attach(buttonframe, 1, 1, 1, 1);
 
             loadcolor = settings.get_string("clock-hands");
             color = Gdk.RGBA();
             color.parse(loadcolor);
             Gtk.ColorButton buttonhands = new Gtk.ColorButton.with_rgba(color);
-            buttonhands.color_set.connect (() =>
-                             { on_color_changed(buttonhands,"clock-hands");});
+            buttonhands.color_set.connect (() => {
+                on_color_changed(buttonhands,"clock-hands");
+            });
             this.attach(buttonhands, 1, 2, 1, 1);
 
             loadcolor = settings.get_string("clock-face");
@@ -95,16 +96,18 @@ namespace AnalogueClock {
                 color.parse(loadcolor);
             }
             Gtk.ColorButton buttonface = new Gtk.ColorButton.with_rgba(color);
-            buttonface.color_set.connect (() =>
-                                 { on_color_changed(buttonface,"clock-face");});
+            buttonface.color_set.connect (() => {
+                on_color_changed(buttonface,"clock-face");
+            });
             this.attach(buttonface, 1, 3, 1, 1);
 
             Gtk.Button button_set_transparent = new Gtk.Button.with_label("Set");
             button_set_transparent.clicked.connect(() => {
-                                    Gdk.RGBA transp = Gdk.RGBA();
-                                    transp.parse("rgba(0,0,0,0)");
-                                    buttonface.set_rgba(transp);
-                                    settings.set_string("clock-face","none");});
+                Gdk.RGBA transp = Gdk.RGBA();
+                transp.parse("rgba(0,0,0,0)");
+                buttonface.set_rgba(transp);
+                settings.set_string("clock-face","rgba(0,0,0,0)");
+            });
             this.attach(button_set_transparent, 1, 4, 1, 1);
             Gtk.Switch switch_markings = new Gtk.Switch();
             switch_markings.set_halign(Gtk.Align.END);
@@ -119,7 +122,8 @@ namespace AnalogueClock {
                 combo_tz.insert_text(i, seconds_to_utc(TIMES[i]));
             }
             switch_local.notify["active"].connect(() => {
-                                          combo_tz.set_sensitive(switch_local.get_active()); } );
+                combo_tz.set_sensitive(switch_local.get_active());
+            });
             this.attach(combo_tz, 1, 8, 1, 1);
 
             Gtk.Switch switch_use_name = new Gtk.Switch();
@@ -129,7 +133,8 @@ namespace AnalogueClock {
             Gtk.Entry entry_name = new Gtk.Entry();
             entry_name.set_max_length(30);
             switch_use_name.notify["active"].connect(() => {
-                                          entry_name.set_sensitive(switch_use_name.get_active()); } );
+                entry_name.set_sensitive(switch_use_name.get_active());
+            });
             namebox.pack_start(new Gtk.Label("Clock name: "), false, false);
             namebox.pack_end(entry_name, true, true);
             this.attach(namebox, 0, 11, 2, 1);
@@ -154,22 +159,17 @@ namespace AnalogueClock {
 
     public class AnalogueClockApplet : Budgie.Applet {
 
-        private GLib.Settings? panel_settings;
-        private GLib.Settings? currpanelsubject_settings;
         private GLib.Settings settings;
         private ulong panel_signal;
-        private ulong? settings_signal;
+        private ulong settings_signal;
 
         private bool keep_running;
-        private bool update_needed;
 
-        private Gtk.Box panel_box;
         protected Gtk.EventBox widget;
-        private Gtk.Image clock_image;
-        private int max_size;
-        private int old_minute;
-        private PanelClock clock;
-        private DateTime current_time;
+        private int clock_size;
+        private int clock_request_size;
+        private int max_size = MAX_SIZE;
+        private PanelClockImage.Clock clock;
 
         private int time_offset = 0;
         private bool use_timezone = false;
@@ -187,20 +187,15 @@ namespace AnalogueClock {
 		    this.settings_schema = "com.github.samlane-ma.analogue-clock";
 		    this.settings_prefix = "/com/solus-project/budgie-panel/instance/analogue-clock";
 		    this.settings = this.get_applet_settings(uuid);
-
-            max_size = MIN_SIZE;
-            update_needed = true;
+            clock_size = settings.get_int("clock-size");
             keep_running = true;
-            clock = new PanelClock();
 
+            clock = new PanelClockImage.Clock(clock_size);
             widget = new Gtk.EventBox();
             popover = new ClockPopover.ClockPopover(widget);
 
-            panel_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 1);
-            widget.add(panel_box);
+            widget.add(clock);
             add(widget);
-            clock_image = new Gtk.Image();
-            panel_box.pack_start(clock_image, false, false, 0);
 
             widget.button_press_event.connect((e)=> {
                 if (e.button != 1) {
@@ -209,27 +204,29 @@ namespace AnalogueClock {
                 if (popover.get_visible()) {
                     popover.hide();
                 } else {
-                    DateTime date;
-                    if (!use_timezone) {
-                        date = new DateTime.now_local();
-                    }
-                    else {
-                        date = new DateTime.now_utc().add_seconds(time_offset);
-                    }
-                    popover.select_day(date);
+                    popover.select_day(clock.current_time);
                     this.manager.show_popover(widget);
                 }
                 return Gdk.EVENT_STOP;
             });
 
+            load_settings();
+
             popover.get_child().show_all();
             show_all();
 
             settings_signal = settings.changed.connect(force_clock_redraw);
-            load_settings();
-            Idle.add(() => { watch_applet(uuid);
-                             return false;});
-            Timeout.add_seconds_full(GLib.Priority.LOW,5,update_clock_time);
+
+            Idle.add(() => {
+                watch_applet(uuid);
+                return false;
+            });
+
+            Timeout.add(1000, () => {
+                update_gui();
+                clock.queue_draw();
+                return keep_running;
+            });
         }
 
         public override void update_popovers(Budgie.PopoverManager? manager) {
@@ -246,6 +243,9 @@ namespace AnalogueClock {
             if (settings.get_boolean("use-time-zone")) {
                 use_timezone = true;
                 clock_name = seconds_to_utc(time_offset);
+                clock.set_use_time_offset(time_offset);
+            } else {
+                clock.set_use_local_time();
             }
             if (settings.get_boolean("show-name")) {
                 string load_name = settings.get_string("clock-name").strip();
@@ -253,87 +253,43 @@ namespace AnalogueClock {
                     clock_name = load_name;
                 }
             }
-            clock.size = settings.get_int("clock-size");
-            if (clock.size > max_size) {
-                clock.size = max_size;
-            }
-            // Don't recursively trigger this if validate_settings fixes things
-            if (settings_signal != null) {
-                SignalHandler.block((void*)settings,settings_signal);
-                validate_settings();
-                SignalHandler.unblock((void*)settings,settings_signal);
-            }
-            clock.hands_color = settings.get_string("clock-hands");
-            clock.line_color = settings.get_string("clock-outline");
-            clock.fill_color = settings.get_string("clock-face");
-            clock.draw_marks = settings.get_boolean("draw-marks");
+            clock.set_drawmarks(settings.get_boolean("draw-marks"));
+            update_gui();
+            clock_request_size = settings.get_int("clock-size");
+            clock_size = (clock_request_size > max_size) ? max_size : clock_request_size;
+            clock.update_size(clock_size);
+            update_colors();
         }
 
-        private void validate_settings() {
-            // Verify the color names are valid, reload defaults if not.
-            // Should only happen if invalid dconf settings are manually entered
-            string[] setting_name = {"clock-hands", "clock-outline", "clock-face"};
-            string[] default_color = {"#000000", "#000000", "#FFFFFF"};
-            for (int i = 0; i < 3; i++) {
-                Gdk.RGBA testcolor = Gdk.RGBA();
-                string colorname = settings.get_string(setting_name[i]);
-                if (colorname != "none" && !testcolor.parse(colorname)) {
-                    settings.set_string(setting_name[i],default_color[i]);
-                }
-            }
+        private void update_colors() {
+            foreach(string part in clock_parts) clock.set_color(part, settings.get_string(part));
+        }
+
+        private void update_gui() {
+            var ct = clock.current_time;
+            widget.set_tooltip_text(clock_name + "\n" + ct.format("%x"));
+            popover.update_labels(ct.format("%A"), ct.format("%e %B %Y"), clock_name);
         }
 
         private void force_clock_redraw() {
-            // force the redraw after settings / panel change
-            update_needed = true;
             load_settings();
-            update_clock_time();
-        }
-
-        private bool update_clock_time() {
-            // Check the time, draw a new clock if necessary
-            if (use_timezone) {
-                current_time = new DateTime.now_utc().add_seconds(time_offset);
-            }
-            else {
-                current_time = new DateTime.now_local();
-            }
-            if (current_time.get_minute() != old_minute || update_needed) {
-                old_minute = current_time.get_minute();
-                clock.hour = current_time.get_hour();
-                clock.minute = current_time.get_minute();
-                update_needed = false;
-                Idle.add(() => { clock_image.set_from_surface(clock.get_clock_surface());
-                                 panel_box.set_tooltip_text(clock_name + "\n" + current_time.format("%x"));
-                                 popover.update_labels(current_time.format("%A"),
-                                                       current_time.format("%e %B %Y"),
-                                                       clock_name);
-                                 return false; });
-            }
-            return keep_running;
+            clock.queue_draw();
         }
 
         private bool find_applet(string find_uuid, string[] applet_list) {
             // Search panel applets for the given uuid
-            for (int i = 0; i < applet_list.length; i++) {
-                if (applet_list[i] == find_uuid) {
-                    return true;
-                }
-            }
-            return false;
+            return (find_uuid in applet_list);
         }
 
         private void watch_applet(string find_uuid) {
             // Check if the applet is still on the panel and ends cleanly if not
             string[] applets;
             string soluspath = "com.solus-project.budgie-panel";
-            panel_settings = new GLib.Settings(soluspath);
+            var panel_settings = new GLib.Settings(soluspath);
             string[] allpanels_list = panel_settings.get_strv("panels");
             foreach (string p in allpanels_list) {
                 string panelpath = "/com/solus-project/budgie-panel/panels/".concat("{", p, "}/");
-                currpanelsubject_settings = new GLib.Settings.with_path(
-                    soluspath + ".panel", panelpath
-                );
+                var currpanelsubject_settings = new GLib.Settings.with_path(soluspath + ".panel", panelpath);
                 applets = currpanelsubject_settings.get_strv("applets");
                 if (find_applet(find_uuid, applets)) {
                      panel_signal = currpanelsubject_settings.changed["applets"].connect(() => {
@@ -350,27 +306,12 @@ namespace AnalogueClock {
 
         public override void panel_size_changed(int p, int i, int s) {
             // Scale the icon if necessary when panel is resized
-            max_size = p - 6;
+            max_size = p;
             if (max_size < MIN_SIZE){
                 max_size = MIN_SIZE;
             }
-            int current_size = settings.get_int("clock-size");
-            if (current_size > max_size) {
-                clock.size = max_size;
-            }
-            force_clock_redraw();
-        }
-
-        public override void panel_position_changed(Budgie.PanelPosition position) {
-            // Keep the icon centered in both horizontal and vertical panels
-            if ( position == Budgie.PanelPosition.LEFT ||
-                 position == Budgie.PanelPosition.RIGHT ) {
-                panel_box.set_orientation(Gtk.Orientation.VERTICAL);
-            }
-            else {
-                panel_box.set_orientation(Gtk.Orientation.HORIZONTAL);
-            }
-            force_clock_redraw();
+            clock_size = clock_request_size > max_size ? max_size : clock_request_size;
+            clock.update_size(clock_size);
         }
 
         public override bool supports_settings() {
