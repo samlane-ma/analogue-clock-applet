@@ -65,10 +65,10 @@ class ClockInfo : Object {
         large_markwidth = frame_linewidth;
         large_markend = radius * 0.84;
         markstart = radius * 0.92;
-        handwidth = minimum_int(1, _size * 0.04);
+        handwidth = minimum_int(1, (_size + 4) * 0.05);
         secondhand_width = minimum_int(1, _size / 70 - 1);
         minute_handlength = radius * 0.74;
-        hourhand_length = radius * 0.53;
+        hourhand_length = radius * 0.51;
         secondhand_length = radius * 0.79;
         center_dotsize = minimum_int(1, radius * 0.06);
     }

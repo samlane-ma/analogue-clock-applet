@@ -148,18 +148,14 @@ namespace AnalogueClock {
         private ulong settings_signal;
 
         private bool keep_running;
-
-        protected Gtk.EventBox widget;
+        private string clock_name = "";
         private int clock_size;
         private int clock_request_size;
         private int max_size = MAX_SIZE;
+
+        protected Gtk.EventBox widget;
         private PanelClockImage.Clock clock;
-
-        private int time_offset = 0;
-        private bool use_timezone = false;
-        private string clock_name = "";
-
-        ClockPopover.ClockPopover? popover = null;
+        private ClockPopover.ClockPopover? popover = null;
         private unowned Budgie.PopoverManager? manager = null;
 
         public string uuid { public set; public get; }
@@ -237,9 +233,9 @@ namespace AnalogueClock {
         }
 
         private void update_timedata() {
-            use_timezone = settings.get_boolean("use-time-zone");
+            bool use_timezone = settings.get_boolean("use-time-zone");
             int timezone = settings.get_int("time-zone");
-            time_offset = TIMES[timezone];
+            int time_offset = TIMES[timezone];
             clock_name = "Local Time";
             if (settings.get_boolean("use-time-zone")) {
                 use_timezone = true;
