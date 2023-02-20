@@ -7,6 +7,9 @@
  *  Copyright © 2020-2022 Samuel Lane
  *  http://github.com/samlane-ma/
  *
+ *  Portions of this applet are part of the Budgie Clock Applet
+ *  Copyright © 2014-2022 Budgie Desktop Developers
+ *
  */
 
 using Gtk, Gdk;

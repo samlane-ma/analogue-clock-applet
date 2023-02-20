@@ -1,9 +1,6 @@
 /*
- * Budgie Raven Analog Clock Image
- * Part of Budgie Raven Analog Clock
  * Author: Sam Lane
  * Copyright © 2023 Ubuntu Budgie Developers
- * Website=https://ubuntubudgie.org
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or any later version. This
@@ -13,6 +10,7 @@
  * should have received a copy of the GNU General Public License along with this
  * program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 namespace PanelClockImage {
 
 struct XYCoords {
@@ -60,14 +58,14 @@ class ClockInfo : Object {
         _size = new_size;
         center = _size / 2;
         radius = _size / 2;
-        frame_linewidth = _size / 90 + 1;
+        frame_linewidth = minimum_int(1, _size * 0.04);
         frame_radius = (int) (radius * 0.95);
         face_linewidth = _size / 50;
         face_radius = frame_radius;
-        large_markwidth = _size / 90 + 1;
-        large_markend = radius * 0.85;
+        large_markwidth = frame_linewidth;
+        large_markend = radius * 0.84;
         markstart = radius * 0.92;
-        handwidth = minimum_int(1, _size / 50);
+        handwidth = minimum_int(1, _size * 0.04);
         secondhand_width = minimum_int(1, _size / 70 - 1);
         minute_handlength = radius * 0.74;
         hourhand_length = radius * 0.53;
@@ -236,7 +234,6 @@ public class Clock : Gtk.DrawingArea {
             hand_position += 60;
         }
         // Get the x and y positions based on the time and hand length
-        // I never much cared for trigonometry...
         double radians = (hand_position * FULL_CIRCLE / 60);
         double x = length * Math.cos(radians) + center;
         double y = length * Math.sin(radians) + center;
