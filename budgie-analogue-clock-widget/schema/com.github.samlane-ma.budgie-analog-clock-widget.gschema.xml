@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="com.github.samlane-ma.budgie-analog-clock-widget">
+    <key type="b" name="show-seconds">
+      <default>true</default>
+      <summary>Show the seconds hand</summary>
+      <description>Show the seconds hand</description>
+    </key>
+    <key type="b" name="use-dropdown">
+      <default>true</default>
+      <summary>Use the Raven dropdown</summary>
+      <description>Show the clock in a Raven dropdown</description>
+    </key>
+    <key type="i" name="clock-style">
+      <range min="0" max="3" />
+      <default>0</default>
+      <summary>Clock Style</summary>
+      <description>Clock style</description>
+    </key>
+    <key type="i" name="clock-size">
+      <range min="40" max="100" />
+      <default>65</default>
+      <summary>Clock size</summary>
+      <description>Percentage of the Raven panel width</description>
+    </key>
+    <key type="s" name="face-color">
+      <default>"white"</default>
+      <summary>Face color</summary>
+      <description>Color of the clock face</description>
+    </key>
+    <key type="s" name="frame-color">
+      <default>"black"</default>
+      <summary>Frame color</summary>
+      <description>Color of the clock frame</description>
+    </key>
+    <key type="s" name="hand-color">
+      <default>"black"</default>
+      <summary>Hand color</summary>
+      <description>Color of the clock minute and hour hands</description>
+    </key>
+    <key type="s" name="seconds-color">
+      <default>"red"</default>
+      <summary>Seconds hand color</summary>
+      <description>Color of clock seconds hand</description>
+    </key>
+  </schema>
+</schemalist>

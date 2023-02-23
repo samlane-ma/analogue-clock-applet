@@ -1,0 +1,3 @@
+option('build-all', type: 'boolean', value: true, description: 'Build applet and widget')
+option('build-applet', type: 'boolean', value: false, description: 'Build applet')
+option('build-widget', type: 'boolean', value: false, description: 'Build widget')

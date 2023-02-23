@@ -1,0 +1,9 @@
+[Plugin]
+Module=com.github.samlane-ma.budgie-analog-clock-widget
+Builtin=false
+Name=Analog Clock
+Description=Analog Clock for the Raven Panel
+Authors=Sam Lane
+Copyright=2023 Sam Lane
+Website=https://github.com/samlane-ma/
+Icon=budgie-analog-clock
