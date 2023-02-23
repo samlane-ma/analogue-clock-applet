@@ -19,11 +19,13 @@ To install (for Debian/Ubuntu):
     sudo ninja install
     
 * to install only the applet - use the following option:
+```
 meson setup --prefix=/usr --libdir=/usr/lib -Dbuild-all=false -Dbuild-applet=true
-
+```
 * to install only the widget
+```
 meson setup --prefix=/usr --libdir=/usr/lib -Dbuild-all=false -Dbuild-widget=true
-
+```
 * for other distros omit libdir or specify the location of the distro library folder
 
 This will:
