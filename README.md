@@ -1,23 +1,12 @@
 # Analogue Clock Applet
 
+## Provides an analogue clock applet for Budgie Panel and a widget for the Raven Panel
+
+## Panel Applet
 ![Screenshot](images/clock.png?raw=true)
 
-## Add an analogue clock to the Budgie Panel
-
-### This is a Vala based rewrite of python Budgie Analog Clock.
-### It is for the most part identical in form and function to the python version.
-
-This applet will add a simple analogue clock on the Budgie panel. 
-
-The applet currently allows you to:
-* Change the clock size through the applet settings
-* Change the color of the frame, face, and hands
-* Enable or disable the hour markings on the face
-
-The applet will respect the panel settings, and not draw a clock larger than
-the Budgie Panel.  However, if the panel is resized, the clock will change size
-as well, up to the clock size specified in the applet setting
-
+## Raven Widget
+![Screenshot](images/analog-clock.png?raw=true)
 
 i.e. for Debian based distros
 
@@ -25,12 +14,19 @@ To install (for Debian/Ubuntu):
 
     mkdir build
     cd build
-    meson --prefix=/usr --libdir=/usr/lib
-    ninja -v
+    meson setup --prefix=/usr --libdir=/usr/lib
+    ninja
     sudo ninja install
+    
+* to install only the applet - use the following option:
+meson setup --prefix=/usr --libdir=/usr/lib -Dbuild-all=false -Dbuild-applet=true
+
+* to install only the widget
+meson setup --prefix=/usr --libdir=/usr/lib -Dbuild-all=false -Dbuild-widget=true
 
 * for other distros omit libdir or specify the location of the distro library folder
 
 This will:
-* install plugin files to the Budgie Desktop plugins folder
+* install applet plugin files to the Budgie Desktop applet plugin folder
+* install widget plugin files to the Budgie Desktop widget plugin folder 
 * compile the schema
