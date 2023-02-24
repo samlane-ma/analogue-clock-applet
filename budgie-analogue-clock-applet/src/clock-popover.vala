@@ -4,12 +4,23 @@
  *  Popover used by the Analogue Clock Applet to display a calendar and
  *  options to open a Calendar application and system time settings
  *
- *  Copyright © 2020-2022 Samuel Lane
+ *  Copyright © 2020 Samuel Lane
  *  http://github.com/samlane-ma/
  *
- *  Portions of this applet are part of the Budgie Clock Applet
- *  Copyright © 2014-2022 Budgie Desktop Developers
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  Icon made by Becris from www.flaticon.com
  */
 
 using Gtk, Gdk;

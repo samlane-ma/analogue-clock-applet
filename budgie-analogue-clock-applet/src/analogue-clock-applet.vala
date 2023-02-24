@@ -1,12 +1,12 @@
 /*
  *  Analogue Clock Applet for the Budgie Panel
  *
- *  Copyright © 2020 - 2022 Samuel Lane
+ *  Copyright © 2020 Samuel Lane
  *  http://github.com/samlane-ma/
  *
  *  Thanks to the Ubuntu Budgie Developers for their assistance,
  *  examples, and pieces of code I borrowed to make this work.
-
+ *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
