@@ -13,6 +13,14 @@ SCHEMA_DIR = join_paths(prefix, 'share', 'glib-2.0', 'schemas')
 
 build_all = get_option('build-all')
 
+for_wayland = get_option('for-wayland')
+
+if for_wayland == false
+	budgie_dep = dependency('budgie-1.0')
+else
+	budgie_dep = dependency('budgie-2.0')
+endif
+
 build_applet = get_option('build-applet')
 if build_all == true or build_applet == true
 	subdir('budgie-analogue-clock-applet')
