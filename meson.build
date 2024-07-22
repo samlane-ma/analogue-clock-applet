@@ -16,19 +16,20 @@ build_all = get_option('build-all')
 for_wayland = get_option('for-wayland')
 
 if for_wayland == false
-	budgie_dep = dependency('budgie-1.0')
+        budgie_dep = dependency('budgie-1.0')
 else
-	budgie_dep = dependency('budgie-2.0')
+        budgie_dep = [ dependency('budgie-2.0'),
+                       dependency('gtk-layer-shell-0') ]
 endif
 
 build_applet = get_option('build-applet')
 if build_all == true or build_applet == true
-	subdir('budgie-analogue-clock-applet')
+        subdir('budgie-analogue-clock-applet')
 endif
 
 build_widget = get_option('build-widget')
 if build_all == true or build_widget == true
-	subdir('budgie-analogue-clock-widget')
+        subdir('budgie-analogue-clock-widget')
 endif
 
 message('Installing')
