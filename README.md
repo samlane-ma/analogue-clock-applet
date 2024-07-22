@@ -17,7 +17,11 @@ To install (for Debian/Ubuntu):
     meson setup --prefix=/usr --libdir=/usr/lib
     ninja
     sudo ninja install
-    
+
+* to build for wayland, use the option:
+```
+-Dfor-wayland=true
+``` 
 * to install only the applet - use the following option:
 ```
 meson setup --prefix=/usr --libdir=/usr/lib -Dbuild-all=false -Dbuild-applet=true
