@@ -17,9 +17,11 @@ for_wayland = get_option('for-wayland')
 
 if for_wayland == false
         budgie_dep = dependency('budgie-1.0')
+        peas_dep = dependency('libpeas-1.0')
 else
         budgie_dep = [ dependency('budgie-2.0'),
                        dependency('gtk-layer-shell-0') ]
+        peas_dep = dependency('libpeas-2')
 endif
 
 build_applet = get_option('build-applet')

@@ -2,7 +2,7 @@ RavenAnalogClockSources = ['ravenanalogclock.vala', 'ravenclockimage.vala', 'clo
 
 RavenAnalogClockDependencies = [
     dependency('gtk+-3.0', version: '>=3.18'),
-    dependency('libpeas-gtk-1.0'),
+    peas_dep,
     dependency('budgie-raven-plugin-1.0'),
     meson.get_compiler('c').find_library('m', required: false)
 ]

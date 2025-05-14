@@ -10,8 +10,8 @@ AnalogueClockSources = [
 AnalogueClockDependencies = [
 dependency('gtk+-3.0', version: '>=3.18'),
 budgie_dep,
+peas_dep,
 dependency('gdk-3.0'),
-dependency('libpeas-gtk-1.0'),
 meson.get_compiler('c').find_library('m', required: false)
 ]
 
