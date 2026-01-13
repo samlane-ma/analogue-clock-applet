@@ -1,4 +1,10 @@
 option('build-all', type: 'boolean', value: true, description: 'Build applet and widget')
 option('build-applet', type: 'boolean', value: false, description: 'Build applet')
 option('build-widget', type: 'boolean', value: false, description: 'Build widget')
-option('for-wayland', type: 'boolean', value: false, description: 'Build for wayland')
+option('for-wayland', type: 'boolean', value: false, description: 'Build for Wayland (ABI 3.0)')
+option('budgie-version',
+  type: 'combo',
+  value: '3.0',
+  description: 'Budgie library version to build against (1.0, 2.0, or 3.0)',
+  choices: ['1.0', '2.0', '3.0']
+)

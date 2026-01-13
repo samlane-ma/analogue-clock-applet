@@ -14,23 +14,25 @@ To install (for Debian/Ubuntu):
 
     mkdir build
     cd build
-    meson setup --prefix=/usr --libdir=/usr/lib
+    meson setup --prefix=/usr
     ninja
     sudo ninja install
 
-* to build for wayland, use the option:
+To specify the version of the Budgie ABIs to build against:
+
 ```
--Dfor-wayland=true
+-Dbudgie-version=3.0 (Budgie Desktop 10.10 and later - Wayland)
+-Dbudgie-version=2.0 (Budgie Desktop 10.9.4)
+-Dbudgie-version=1.0 (Budgie Desktop 10.9.3 and earlier)
 ``` 
 * to install only the applet - use the following option:
 ```
-meson setup --prefix=/usr --libdir=/usr/lib -Dbuild-all=false -Dbuild-applet=true
+meson setup --prefix=/usr -Dbuild-all=false -Dbuild-applet=true
 ```
 * to install only the widget
 ```
-meson setup --prefix=/usr --libdir=/usr/lib -Dbuild-all=false -Dbuild-widget=true
+meson setup --prefix=/usr -Dbuild-all=false -Dbuild-widget=true
 ```
-* for other distros omit libdir or specify the location of the distro library folder
 
 This will:
 * install applet plugin files to the Budgie Desktop applet plugin folder
